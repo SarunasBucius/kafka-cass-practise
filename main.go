@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"os"
 )
+
+var version string
 
 func main() {
 	fmt.Println("Hello")
-	fmt.Println(os.Getenv("commit_hash"))
+	fmt.Println(version)
 }
