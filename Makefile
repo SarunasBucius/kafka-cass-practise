@@ -4,3 +4,9 @@ build:
 
 run:
 	docker run --rm --env commit_hash=$(version) kafka-cass-practise
+
+start:
+	docker-compose up --build
+
+stop:
+	docker-compose down
