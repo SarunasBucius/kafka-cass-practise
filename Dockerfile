@@ -1,5 +1,6 @@
 FROM golang
 ADD . /go/src/github.com/SarunasBucius/kafka-cass-practise
+RUN go get -d ./...
 RUN go install github.com/SarunasBucius/kafka-cass-practise
 
 FROM ubuntu
