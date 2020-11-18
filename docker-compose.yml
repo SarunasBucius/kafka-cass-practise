@@ -1,7 +1,10 @@
 version: "3.8"
 services:
   app:
-    build: .
+    build: 
+      context: .
+      args:
+        - commit_hash=${COMMIT_HASH}
     depends_on: 
       - cass
     environment:
