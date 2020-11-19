@@ -6,6 +6,6 @@ run:
 	docker run --rm -it kafka-cass-practise:$(version) 
 
 start:
-	env COMMIT_HASH=$(version) docker-compose up --build
+	env COMMIT_HASH=$(version) docker-compose up
 stop:
 	docker-compose down

@@ -1,12 +1,10 @@
 version: "3.8"
 services:
   app:
-    build: 
-      context: .
-      args:
-        - commit_hash=${COMMIT_HASH}
+    image: kafka-cass-practise:${COMMIT_HASH}
     depends_on: 
       - cass
+      - kafka
     environment:
       - CASSANDRA_HOST=cass
     restart: always
