@@ -1,11 +1,9 @@
-ARG commit_hash
 FROM golang
 ARG commit_hash
-ADD . /go/src/github.com/SarunasBucius/kafka-cass-practise
 WORKDIR /go/src/github.com/SarunasBucius/kafka-cass-practise
-RUN go get -d ./...
-RUN go install -ldflags "-X 'main.version=${commit_hash}'" .
+ADD . .
+RUN go build -o kcp -ldflags "-X 'main.version=${commit_hash}' -linkmode external -extldflags -static" .
 
-FROM ubuntu
-COPY --from=0 /go/bin/kafka-cass-practise .
-CMD ./kafka-cass-practise
+FROM scratch
+COPY --from=0 /go/src/github.com/SarunasBucius/kafka-cass-practise/kcp .
+CMD ["./kcp"]
