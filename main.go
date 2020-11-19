@@ -11,7 +11,7 @@ import (
 var version string
 
 func main() {
-	sig := make(chan os.Signal)
+	sig := make(chan os.Signal, 1)
 	signal.Notify(sig,
 		syscall.SIGHUP,
 		syscall.SIGINT,
@@ -22,5 +22,4 @@ func main() {
 	fmt.Println(version)
 
 	log.Println(<-sig)
-	os.Exit(0)
 }
