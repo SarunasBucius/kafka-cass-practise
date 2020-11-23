@@ -1,10 +1,15 @@
 version = $$(git rev-parse --short HEAD)
+LDFLAGS = -ldflags "-X 'main.version=$$commit_hash' -extldflags -static"
 build:
-	docker run --env commit_hash=$(version) --rm -v "$$PWD":/usr/src/kcp -w /usr/src/kcp golang make build-binary;
-	docker build -t kafka-cass-practise:$(version) .
+	# docker run --env commit_hash=$(version) --rm -v "$$PWD":/usr/src/kcp -w /usr/src/kcp go-builder;
+	docker run --env commit_hash=$(version) --rm \
+		-v "$$PWD":/usr/src/kcp -w /usr/src/kcp golang:1.15.5-buster \
+		make build-binary;
+	docker build -t kafka-cass-practise:$(version) .;
+	rm -f ./kcp
 	
 build-binary:
-	CGO_ENABLED=0 go build -o kcp -ldflags "-X 'main.version=$$commit_hash'" .
+	go build $(LDFLAGS) -o kcp .
 
 run:
 	docker run --rm -it kafka-cass-practise:$(version) 
