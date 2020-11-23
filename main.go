@@ -23,14 +23,26 @@ func main() {
 		syscall.SIGQUIT,
 	)
 
-	prod := kafkaProducerConn()
+	prod, err := kafkaProducerConn()
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer prod.Close()
-	cons := kafkaConsumerConn()
+	cons, err := kafkaConsumerConn()
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer cons.Close()
-	db := cassConn()
+	db, err := cassConn()
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer db.Close()
 
-	checkKafkaConn(cons)
+	err = checkKafkaConn(cons)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	go listenHTTP(prod)
 
@@ -49,39 +61,40 @@ func listenHTTP(prod *kafka.Producer) {
 	}
 }
 
-func cassConn() *gocql.Session {
+func cassConn() (*gocql.Session, error) {
 	cluster := gocql.NewCluster(os.Getenv("CASSANDRA_HOST"))
 
 	session, err := cluster.CreateSession()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return session
+	return session, nil
 }
 
-func kafkaConsumerConn() *kafka.Consumer {
+func kafkaConsumerConn() (*kafka.Consumer, error) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": os.Getenv("KAFKA_HOST"),
 		"group.id":          "myGroup",
 		"auto.offset.reset": "earliest",
 	})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return c
+	return c, nil
 }
 
-func kafkaProducerConn() *kafka.Producer {
+func kafkaProducerConn() (*kafka.Producer, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": os.Getenv("KAFKA_HOST")})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return p
+	return p, nil
 }
 
-func checkKafkaConn(c *kafka.Consumer) {
+func checkKafkaConn(c *kafka.Consumer) error {
 	_, err := c.GetMetadata(nil, false, 10000)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
