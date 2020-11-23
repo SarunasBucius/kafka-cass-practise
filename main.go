@@ -8,9 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/SarunasBucius/kafka-cass-practise/visits"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gocql/gocql"
+
+	"github.com/SarunasBucius/kafka-cass-practise/visits"
 )
 
 var version string
