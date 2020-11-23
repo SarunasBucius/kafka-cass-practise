@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/SarunasBucius/kafka-cass-practise/visits"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gocql/gocql"
 )
@@ -29,10 +31,21 @@ func main() {
 
 	checkKafkaConn(cons)
 
+	go listenHTTP(prod)
+
 	fmt.Println("Hello")
 	fmt.Println(version)
 
 	log.Println(<-sig)
+}
+
+func listenHTTP(prod *kafka.Producer) {
+	r := visits.SetRoutes(prod)
+
+	err := http.ListenAndServe(":5000", r)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func cassConn() *gocql.Session {
