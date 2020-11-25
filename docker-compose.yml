@@ -7,6 +7,7 @@ services:
       - kafka
     environment:
       - CASSANDRA_HOST=cass
+      - KAFKA_HOST=kafka
     restart: always
 
   cass:
