@@ -22,26 +22,32 @@ func main() {
 		syscall.SIGINT,
 		syscall.SIGQUIT,
 	)
-
+	var err error
+	defer func() {
+		if err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
+	}()
 	prod, err := kafkaProducerConn()
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 	defer prod.Close()
 	cons, err := kafkaConsumerConn()
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 	defer cons.Close()
 	db, err := cassConn()
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 	defer db.Close()
 
 	err = checkKafkaConn(cons)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
 	go listenHTTP(prod)
