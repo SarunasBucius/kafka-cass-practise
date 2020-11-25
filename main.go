@@ -17,31 +17,20 @@ import (
 var version string
 
 func main() {
+	err := runApp()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+}
+
+func runApp() error {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig,
 		syscall.SIGINT,
 		syscall.SIGQUIT,
 	)
-	var err error
-	defer func() {
-		if err != nil {
-			log.Println(err)
-			os.Exit(1)
-		}
-	}()
 
-	err = runApp()
-	if err != nil {
-		return
-	}
-
-	fmt.Println("Hello")
-	fmt.Println(version)
-
-	log.Println(<-sig)
-}
-
-func runApp() error {
 	prod, err := kafkaProducerConn()
 	if err != nil {
 		return err
@@ -65,6 +54,10 @@ func runApp() error {
 
 	go listenHTTP(prod)
 
+	fmt.Println("Hello")
+	fmt.Println(version)
+
+	log.Println(<-sig)
 	return nil
 }
 
