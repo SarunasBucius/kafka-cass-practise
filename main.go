@@ -29,33 +29,43 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-	prod, err := kafkaProducerConn()
-	if err != nil {
-		return
-	}
-	defer prod.Close()
-	cons, err := kafkaConsumerConn()
-	if err != nil {
-		return
-	}
-	defer cons.Close()
-	db, err := cassConn()
-	if err != nil {
-		return
-	}
-	defer db.Close()
 
-	err = checkKafkaConn(cons)
+	err = runApp()
 	if err != nil {
 		return
 	}
-
-	go listenHTTP(prod)
 
 	fmt.Println("Hello")
 	fmt.Println(version)
 
 	log.Println(<-sig)
+}
+
+func runApp() error {
+	prod, err := kafkaProducerConn()
+	if err != nil {
+		return err
+	}
+	defer prod.Close()
+	cons, err := kafkaConsumerConn()
+	if err != nil {
+		return err
+	}
+	defer cons.Close()
+	db, err := cassConn()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = checkKafkaConn(cons)
+	if err != nil {
+		return err
+	}
+
+	go listenHTTP(prod)
+
+	return nil
 }
 
 func listenHTTP(prod *kafka.Producer) {
