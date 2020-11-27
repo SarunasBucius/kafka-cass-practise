@@ -64,7 +64,7 @@ func runApp() error {
 }
 
 func listenHTTP(prod *kafka.Producer) {
-	p := kcp.NewProduce(async.Produce{Producer: prod})
+	p := kcp.New(async.Produce{Producer: prod}, nil, nil)
 	r := services.SetRoutes(p)
 
 	err := http.ListenAndServe(":5000", r)
