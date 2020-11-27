@@ -11,7 +11,7 @@ type Produce struct {
 	*kafka.Producer
 }
 
-// ProduceEvent produces event to kafka
+// ProduceEvent produces kcp.Event to kafka
 func (p Produce) ProduceEvent(e kcp.Event) error {
 	return nil
 }

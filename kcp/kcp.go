@@ -11,7 +11,7 @@ type Kcp struct {
 	Inserter
 }
 
-// New takes Producer, Handler, Inserter and returns Kcp instance and an error
+// New takes Producer, Handler, Inserter and returns Kcp instance
 func New(p Producer, h Handler, i Inserter) *Kcp {
 	return &Kcp{Producer: p, Handler: h, Inserter: i}
 }
@@ -24,7 +24,7 @@ type Producer interface {
 	ProduceEvent(Event) error
 }
 
-// ProduceVisit produces visit event and returns error.
+// ProduceVisit produces visit Event and returns error.
 func (k *Kcp) ProduceVisit() error {
 	eventTime := time.Now().UTC()
 	return k.ProduceEvent(Event(eventTime))
@@ -35,7 +35,7 @@ type Handler interface {
 	HandleEvent(Event) error
 }
 
-// HandleVisit handles visit event and returns error.
+// HandleVisit handles visit Event and returns error.
 func (k *Kcp) HandleVisit(event Event) error {
 	return k.HandleEvent(event)
 }
@@ -45,7 +45,7 @@ type Inserter interface {
 	InsertEvent(Event) error
 }
 
-// InsertVisit inserts visit event and returns error.
+// InsertVisit inserts visit Event and returns error.
 func (k *Kcp) InsertVisit(event Event) error {
 	return k.InsertEvent(event)
 }
