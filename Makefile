@@ -10,7 +10,7 @@ build:
 	rm -r -f ./bin/kcp
 	
 build-binary:
-	go build $(LDFLAGS) -o ./bin/kcp .
+	go build $(LDFLAGS) -o ./bin/kcp ./cmd/kcp
 
 run:
 	docker run --rm -it kafka-cass-practise:$(version) 
