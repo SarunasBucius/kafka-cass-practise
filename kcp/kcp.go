@@ -2,6 +2,27 @@
 // and data insertion.
 package kcp
 
+import "errors"
+
+// Kcp contains Producer, Handler and Insert
+type Kcp struct {
+	*Produce
+	*Handle
+	*Insert
+}
+
+// New takes Producer, Handler, Inserter and returns Kcp instance and an error
+func New(p Producer, h Handler, i Inserter) (*Kcp, error) {
+	if p == nil || h == nil || i == nil {
+		return nil, errors.New("missing implementations")
+	}
+	return &Kcp{
+		&Produce{p},
+		&Handle{h},
+		&Insert{i},
+	}, nil
+}
+
 // Produce contains Producer interface.
 type Produce struct {
 	Producer
@@ -25,19 +46,19 @@ func (p *Produce) ProduceVisit() error {
 // Event represets string value of event.
 type Event string
 
-// Consume contains Consumer interface.
-type Consume struct {
-	Consumer
+// Handle contains Handler interface.
+type Handle struct {
+	Handler
 }
 
-// Consumer interface consumes event.
-type Consumer interface {
-	ConsumeEvent(Event) error
+// Handler interface handles event.
+type Handler interface {
+	HandleEvent(Event) error
 }
 
-// ConsumeVisit consumes visit event and returns error.
-func (c *Consume) ConsumeVisit(event Event) error {
-	return c.ConsumeEvent(event)
+// HandleVisit handles visit event and returns error.
+func (c *Handle) HandleVisit(event Event) error {
+	return c.HandleEvent(event)
 }
 
 // Insert contains Inserter interface.
