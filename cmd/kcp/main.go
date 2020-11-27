@@ -13,7 +13,7 @@ import (
 
 	"github.com/SarunasBucius/kafka-cass-practise/kcp"
 	"github.com/SarunasBucius/kafka-cass-practise/platform/async"
-	"github.com/SarunasBucius/kafka-cass-practise/services"
+	"github.com/SarunasBucius/kafka-cass-practise/platform/services"
 )
 
 var version string
