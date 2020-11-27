@@ -2,6 +2,8 @@
 // and data insertion.
 package kcp
 
+import "time"
+
 // Kcp contains Producer, Handler and Insert
 type Kcp struct {
 	Producer
@@ -14,18 +16,19 @@ func New(p Producer, h Handler, i Inserter) *Kcp {
 	return &Kcp{Producer: p, Handler: h, Inserter: i}
 }
 
+// Event represents event created by ProduceVisit.
+type Event time.Time
+
 // Producer produces event.
 type Producer interface {
-	ProduceEvent() error
+	ProduceEvent(Event) error
 }
 
-// ProduceVisit produces visit and returns error.
+// ProduceVisit produces visit event and returns error.
 func (k *Kcp) ProduceVisit() error {
-	return k.ProduceEvent()
+	eventTime := time.Now().UTC()
+	return k.ProduceEvent(Event(eventTime))
 }
-
-// Event represets string value of event.
-type Event string
 
 // Handler interface handles event.
 type Handler interface {
