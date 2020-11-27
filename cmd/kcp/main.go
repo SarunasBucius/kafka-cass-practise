@@ -11,7 +11,9 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gocql/gocql"
 
-	"github.com/SarunasBucius/kafka-cass-practise/visits"
+	"github.com/SarunasBucius/kafka-cass-practise/kcp"
+	"github.com/SarunasBucius/kafka-cass-practise/platform/async"
+	"github.com/SarunasBucius/kafka-cass-practise/services"
 )
 
 var version string
@@ -62,7 +64,8 @@ func runApp() error {
 }
 
 func listenHTTP(prod *kafka.Producer) {
-	r := visits.SetRoutes(prod)
+	p := kcp.NewProduce(async.Produce{Producer: prod})
+	r := services.SetRoutes(p)
 
 	err := http.ListenAndServe(":5000", r)
 	if err != nil {
