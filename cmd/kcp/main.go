@@ -13,6 +13,7 @@ import (
 
 	"github.com/SarunasBucius/kafka-cass-practise/kcp"
 	"github.com/SarunasBucius/kafka-cass-practise/platform/async"
+	"github.com/SarunasBucius/kafka-cass-practise/platform/database"
 	"github.com/SarunasBucius/kafka-cass-practise/platform/services"
 )
 
@@ -54,7 +55,14 @@ func runApp() error {
 		return err
 	}
 
-	go listenHTTP(prod)
+	k := kcp.New(
+		&async.Produce{Producer: prod},
+		&async.Handle{},
+		&database.Insert{Session: db},
+	)
+
+	go async.ConsumeEvents(k, cons)
+	go listenHTTP(k)
 
 	fmt.Println("Hello")
 	fmt.Println(version)
@@ -63,9 +71,8 @@ func runApp() error {
 	return nil
 }
 
-func listenHTTP(prod *kafka.Producer) {
-	p := kcp.New(async.Produce{Producer: prod}, nil, nil)
-	r := services.SetRoutes(p)
+func listenHTTP(k *kcp.Kcp) {
+	r := services.SetRoutes(k)
 
 	err := http.ListenAndServe(":5000", r)
 	if err != nil {

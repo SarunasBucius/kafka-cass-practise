@@ -12,6 +12,19 @@ type Produce struct {
 }
 
 // ProduceEvent produces kcp.Event to kafka
-func (p Produce) ProduceEvent(e kcp.Event) error {
+func (p *Produce) ProduceEvent(event kcp.Event) error {
+	return nil
+}
+
+// ConsumeEvents consumes events from kafka
+func ConsumeEvents(k *kcp.Kcp, cons *kafka.Consumer) {
+
+}
+
+// Handle empty struct to use as receiver for HandleEvent
+type Handle struct{}
+
+// HandleEvent handles kcp.Event
+func (h *Handle) HandleEvent(event kcp.Event) error {
 	return nil
 }

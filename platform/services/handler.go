@@ -9,15 +9,15 @@ import (
 )
 
 // SetRoutes sets routes for http.ListenAndServe
-func SetRoutes(prod *kcp.Kcp) *mux.Router {
+func SetRoutes(k *kcp.Kcp) *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/api/visited", visitedHandler(prod))
+	r.HandleFunc("/api/visited", visitedHandler(k))
 	return r
 }
 
-func visitedHandler(prod *kcp.Kcp) func(w http.ResponseWriter, r *http.Request) {
+func visitedHandler(k *kcp.Kcp) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := prod.ProduceVisit(); err != nil {
+		if err := k.ProduceVisit(); err != nil {
 			http.Error(w, "unexpected error occured", http.StatusInternalServerError)
 			return
 		}
