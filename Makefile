@@ -6,7 +6,7 @@ build:
 		--mount src=dep,dst=/go/pkg/mod/cache \
 		--mount type=bind,src=$$PWD,dst=/usr/src/kcp \
 		-w /usr/src/kcp kcp-builder:$(version) make build-binary;
-	docker build -t kafka-cass-practise:$(version) -f ./Dockerfile ./bin;
+	docker build -t kafka-cass-practise:$(version) ./bin;
 	
 build-binary:
 	go build -tags "musl" $(LDFLAGS) -o ./bin/kcp ./cmd/kcp
