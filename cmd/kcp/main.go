@@ -105,15 +105,8 @@ func cassConn() (*gocql.Session, error) {
 }
 
 func kafkaConsumerConn() (*kafka.Consumer, error) {
-	h, err := net.LookupHost(os.Getenv("KAFKA_HOST"))
-	if err != nil {
-		return nil, err
-	} else if len(h) < 1 {
-		return nil, errors.New("host address not found")
-	}
-
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": h[0],
+		"bootstrap.servers": os.Getenv("KAFKA_HOST"),
 		"group.id":          "myGroup",
 		"auto.offset.reset": "earliest",
 	})
@@ -124,14 +117,7 @@ func kafkaConsumerConn() (*kafka.Consumer, error) {
 }
 
 func kafkaProducerConn() (*kafka.Producer, error) {
-	h, err := net.LookupHost(os.Getenv("KAFKA_HOST"))
-	if err != nil {
-		return nil, err
-	} else if len(h) < 1 {
-		return nil, errors.New("host address not found")
-	}
-
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": h[0]})
+	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": os.Getenv("KAFKA_HOST")})
 	if err != nil {
 		return nil, err
 	}
