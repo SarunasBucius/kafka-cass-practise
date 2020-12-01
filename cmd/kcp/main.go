@@ -73,13 +73,20 @@ func runApp() error {
 		Handler:      services.SetRoutes(k),
 	}
 
+	errc := make(chan error)
+
 	go async.ConsumeEvents(k, cons)
-	go listenHTTP(srv)
+	go listenHTTP(srv, errc)
 
 	fmt.Println("Hello")
 	fmt.Println(version)
 
-	log.Println(<-sig)
+	select {
+	case err := <-errc:
+		return err
+	case <-sig:
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
 
@@ -87,10 +94,9 @@ func runApp() error {
 	return nil
 }
 
-func listenHTTP(srv *http.Server) {
+func listenHTTP(srv *http.Server, errc chan<- error) {
 	if err := srv.ListenAndServe(); err != nil {
-		fmt.Println(err)
-		return
+		errc <- err
 	}
 }
 
