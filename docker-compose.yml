@@ -13,7 +13,7 @@ services:
   cass:
     image: cassandra:4.0
     volumes:
-      - ./data:/var/lib/cassandra
+      - db-data:/var/lib/cassandra
 
   cassui:
     image: ipushc/cassandra-web
@@ -31,3 +31,6 @@ services:
       - "3030:3030"
     environment: 
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+
+volumes:
+  db-data:
