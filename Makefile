@@ -4,6 +4,7 @@ build:
 	docker build -t kcp-builder:$(version) ./builder;
 	docker run --env commit_hash=$(version) --rm \
 		--mount src=dep,dst=/go/pkg/mod/cache \
+		--mount src=build-cache,dst=/root/.cache/go-build \
 		--mount type=bind,src=$$PWD,dst=/usr/src/kcp \
 		-w /usr/src/kcp kcp-builder:$(version) make build-binary;
 	docker build -t kafka-cass-practise:$(version) ./bin;
