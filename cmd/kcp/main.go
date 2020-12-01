@@ -65,22 +65,32 @@ func runApp() error {
 		&database.Insert{Session: db},
 	)
 
+	srv := &http.Server{
+		Addr:         ":5000",
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      services.SetRoutes(k),
+	}
+
 	go async.ConsumeEvents(k, cons)
-	go listenHTTP(k)
+	go listenHTTP(srv)
 
 	fmt.Println("Hello")
 	fmt.Println(version)
 
 	log.Println(<-sig)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+
+	srv.Shutdown(ctx)
 	return nil
 }
 
-func listenHTTP(k *kcp.Kcp) {
-	r := services.SetRoutes(k)
-
-	err := http.ListenAndServe(":5000", r)
-	if err != nil {
-		panic(err)
+func listenHTTP(srv *http.Server) {
+	if err := srv.ListenAndServe(); err != nil {
+		fmt.Println(err)
+		return
 	}
 }
 
