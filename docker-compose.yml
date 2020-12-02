@@ -31,6 +31,8 @@ services:
     image: landoop/fast-data-dev
     ports:
       - "3030:3030"
+    environment:
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
 
 volumes:
   db-data:
