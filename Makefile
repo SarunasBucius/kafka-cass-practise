@@ -13,7 +13,7 @@ build-binary:
 	go build -tags "musl" $(LDFLAGS) -o ./bin/kcp ./cmd/kcp
 
 run:
-	docker run --rm -it kafka-cass-practise:$(version) 
+	docker run -p 5000:5000 --rm -it kafka-cass-practise:$(version) 
 
 start:
 	env COMMIT_HASH=$(version) docker-compose up
