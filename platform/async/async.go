@@ -2,6 +2,7 @@ package async
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -37,17 +38,17 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 }
 
 // ConsumeEvents consumes events from kafka
-func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sync.WaitGroup) {
+func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	err := cons.SubscribeTopics([]string{"visits"}, nil)
 	if err != nil {
 		fmt.Printf("Subscription failed: %v\n", err)
-		return
+		return err
 	}
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		default:
 			ev := cons.Poll(500)
 			if ev == nil {
@@ -67,7 +68,7 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sy
 				}
 			case kafka.Error:
 				if e.IsFatal() {
-					return
+					return errors.New(e.String())
 				}
 			default:
 				fmt.Printf("Ignored %v\n", e)

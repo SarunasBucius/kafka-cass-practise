@@ -72,7 +72,7 @@ func runApp() error {
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 	ctx, cancel := context.WithCancel(context.Background())
-	go async.ConsumeEvents(ctx, k, cons, wg)
+	go startConsume(ctx, k, cons, errc, wg)
 	go startListen(ctx, srv, errc, wg)
 
 	fmt.Println("Hello")
@@ -90,6 +90,13 @@ func runApp() error {
 
 func startListen(ctx context.Context, srv *http.Server, errc chan<- error, wg *sync.WaitGroup) {
 	err := listenHTTP(ctx, srv, wg)
+	if err != nil {
+		errc <- err
+	}
+}
+
+func startConsume(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, errc chan<- error, wg *sync.WaitGroup) {
+	err := async.ConsumeEvents(ctx, k, cons, wg)
 	if err != nil {
 		errc <- err
 	}
