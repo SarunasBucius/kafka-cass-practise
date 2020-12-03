@@ -1,7 +1,9 @@
 package async
 
 import (
+	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -35,8 +37,43 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 }
 
 // ConsumeEvents consumes events from kafka
-func ConsumeEvents(k *kcp.Kcp, cons *kafka.Consumer) {
+func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sync.WaitGroup) {
+	defer wg.Done()
+	err := cons.SubscribeTopics([]string{"visits"}, nil)
+	if err != nil {
+		fmt.Printf("Subscription failed: %v\n", err)
+		return
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			ev := cons.Poll(500)
+			if ev == nil {
+				continue
+			}
 
+			switch e := ev.(type) {
+			case *kafka.Message:
+				event, err := time.Parse(time.RFC3339, string(e.Value))
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				err = k.HandleVisit(kcp.Event(event))
+				if err != nil {
+					fmt.Println(err)
+				}
+			case kafka.Error:
+				if e.IsFatal() {
+					return
+				}
+			default:
+				fmt.Printf("Ignored %v\n", e)
+			}
+		}
+	}
 }
 
 // Handle empty struct to use as receiver for HandleEvent

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -68,29 +69,46 @@ func runApp() error {
 
 	errc := make(chan error)
 
-	go async.ConsumeEvents(k, cons)
-	go listenHTTP(srv, errc)
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	ctx, cancel := context.WithCancel(context.Background())
+	go async.ConsumeEvents(ctx, k, cons, wg)
+	go startListen(ctx, srv, errc, wg)
 
 	fmt.Println("Hello")
 	fmt.Println(version)
 
 	select {
-	case err := <-errc:
-		return err
+	case err = <-errc:
 	case <-sig:
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-	defer cancel()
-
-	srv.Shutdown(ctx)
-	return nil
+	cancel()
+	wg.Wait()
+	return err
 }
 
-func listenHTTP(srv *http.Server, errc chan<- error) {
-	if err := srv.ListenAndServe(); err != nil {
+func startListen(ctx context.Context, srv *http.Server, errc chan<- error, wg *sync.WaitGroup) {
+	err := listenHTTP(ctx, srv, wg)
+	if err != nil {
 		errc <- err
 	}
+}
+
+func listenHTTP(ctx context.Context, srv *http.Server, wg *sync.WaitGroup) error {
+	go func() {
+		select {
+		case <-ctx.Done():
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+			defer cancel()
+			srv.Shutdown(ctx)
+		}
+	}()
+	defer wg.Done()
+	if err := srv.ListenAndServe(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func cassConn() (*gocql.Session, error) {
