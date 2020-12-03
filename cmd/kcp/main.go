@@ -125,7 +125,38 @@ func cassConn() (*gocql.Session, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if err := initDb(session); err != nil {
+		return nil, err
+	}
 	return session, nil
+}
+
+func initDb(s *gocql.Session) error {
+	fmt.Println("Init database")
+	err := s.Query(`DROP KEYSPACE IF EXISTS kcp`).Exec()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = s.Query(`CREATE  KEYSPACE IF NOT EXISTS kcp 
+			WITH REPLICATION = { 
+	   		'class' : 'SimpleStrategy',
+			'replication_factor' : 1 }`).Exec()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = s.Query(`CREATE TABLE kcp.visits(
+	id UUID PRIMARY KEY,
+	visit_time timestamp)`).Exec()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }
 
 func kafkaConsumerConn() (*kafka.Consumer, error) {
