@@ -62,7 +62,7 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sy
 					fmt.Println(err)
 					continue
 				}
-				err = k.HandleVisit(kcp.Event(event))
+				err = k.InsertVisit(kcp.Event(event))
 				if err != nil {
 					fmt.Println(err)
 				}
