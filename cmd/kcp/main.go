@@ -151,7 +151,7 @@ func initDb(s *gocql.Session) error {
 
 	err = s.Query(`CREATE TABLE kcp.visits(
 	id UUID PRIMARY KEY,
-	visit_time timestamp)`).Exec()
+	visited_at timestamp)`).Exec()
 	if err != nil {
 		fmt.Println(err)
 		return err
