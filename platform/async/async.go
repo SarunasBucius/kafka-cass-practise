@@ -77,12 +77,10 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sy
 	}
 }
 
-// Handle contains kcp.Kcp struct
-type Handle struct {
-	kcp.Kcp
-}
+// Handle empty struct to use as receiver for HandleEvent
+type Handle struct{}
 
 // HandleEvent handles kcp.Event
 func (h *Handle) HandleEvent(event kcp.Event) error {
-	return h.InsertVisit(event)
+	return nil
 }
