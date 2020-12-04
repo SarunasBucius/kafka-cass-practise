@@ -40,25 +40,26 @@ func CassConn() (*gocql.Session, error) {
 
 func initDb(s *gocql.Session) error {
 	fmt.Println("Init database")
-	err := s.Query(`DROP KEYSPACE IF EXISTS kcp`).Exec()
-	if err != nil {
+	if err := s.Query(`DROP KEYSPACE IF EXISTS kcp`).Exec(); err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	err = s.Query(`CREATE  KEYSPACE IF NOT EXISTS kcp 
-			WITH REPLICATION = { 
-	   		'class' : 'SimpleStrategy',
-			'replication_factor' : 1 }`).Exec()
-	if err != nil {
+	if err := s.Query(`
+	CREATE  KEYSPACE IF NOT EXISTS kcp 
+	WITH REPLICATION = { 
+		'class' : 'SimpleStrategy',
+		'replication_factor' : 1 }`,
+	).Exec(); err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	err = s.Query(`CREATE TABLE kcp.visits(
-	id UUID PRIMARY KEY,
-	visited_at timestamp)`).Exec()
-	if err != nil {
+	if err := s.Query(`
+	CREATE TABLE kcp.visits(
+		id UUID PRIMARY KEY,
+		visited_at timestamp)`,
+	).Exec(); err != nil {
 		fmt.Println(err)
 		return err
 	}

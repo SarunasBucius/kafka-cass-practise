@@ -20,8 +20,7 @@ import (
 var version string
 
 func main() {
-	err := runApp()
-	if err != nil {
+	if err := runApp(); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}

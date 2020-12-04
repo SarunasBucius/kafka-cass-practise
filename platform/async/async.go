@@ -40,12 +40,12 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 // ConsumeEvents consumes events from kafka
 func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer wg.Done()
-	err := cons.SubscribeTopics([]string{"visits"}, nil)
-	if err != nil {
+	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
 		fmt.Printf("Subscription failed: %v\n", err)
 		cancel()
 		return
 	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -63,8 +63,7 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel
 					fmt.Println(err)
 					continue
 				}
-				err = k.InsertVisit(kcp.Event(event))
-				if err != nil {
+				if err := k.InsertVisit(kcp.Event(event)); err != nil {
 					fmt.Println(err)
 				}
 			case kafka.Error:
