@@ -37,17 +37,18 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 }
 
 // ConsumeEvents consumes events from kafka
-func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sync.WaitGroup) error {
+func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer wg.Done()
 	err := cons.SubscribeTopics([]string{"visits"}, nil)
 	if err != nil {
 		fmt.Printf("Subscription failed: %v\n", err)
-		return err
+		cancel()
+		return
 	}
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return
 		default:
 			ev := cons.Poll(500)
 			if ev == nil {
@@ -67,7 +68,8 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sy
 				}
 			case kafka.Error:
 				if e.IsFatal() {
-					return e
+					cancel()
+					return
 				}
 			default:
 				fmt.Printf("Ignored %v\n", e)

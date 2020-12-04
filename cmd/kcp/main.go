@@ -67,20 +67,18 @@ func runApp() error {
 		Handler:      services.SetRoutes(k),
 	}
 
-	errc := make(chan error)
-
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	wg.Add(1)
-	go startConsume(ctx, k, cons, errc, wg)
+	go async.ConsumeEvents(ctx, k, cons, cancel, wg)
 	wg.Add(1)
-	go startListen(ctx, srv, errc, wg)
+	go listenHTTP(ctx, srv, cancel, wg)
 
 	fmt.Println("Hello")
 	fmt.Println(version)
 
 	select {
-	case err = <-errc:
+	case <-ctx.Done():
 	case <-sig:
 	}
 
@@ -102,21 +100,7 @@ func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) {
 	}
 }
 
-func startListen(ctx context.Context, srv *http.Server, errc chan<- error, wg *sync.WaitGroup) {
-	err := listenHTTP(ctx, srv, wg)
-	if err != nil {
-		errc <- err
-	}
-}
-
-func startConsume(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, errc chan<- error, wg *sync.WaitGroup) {
-	err := async.ConsumeEvents(ctx, k, cons, wg)
-	if err != nil {
-		errc <- err
-	}
-}
-
-func listenHTTP(ctx context.Context, srv *http.Server, wg *sync.WaitGroup) error {
+func listenHTTP(ctx context.Context, srv *http.Server, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	go func() {
 		select {
 		case <-ctx.Done():
@@ -125,9 +109,8 @@ func listenHTTP(ctx context.Context, srv *http.Server, wg *sync.WaitGroup) error
 	}()
 	defer wg.Done()
 	if err := srv.ListenAndServe(); err != nil {
-		return err
+		cancel()
 	}
-	return nil
 }
 
 func cassConn() (*gocql.Session, error) {
