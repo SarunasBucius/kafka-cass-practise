@@ -102,12 +102,10 @@ func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) {
 
 func listenHTTP(ctx context.Context, srv *http.Server, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	go func() {
-		select {
-		case <-ctx.Done():
-			srv.Shutdown(context.Background())
-		}
+		defer wg.Done()
+		<-ctx.Done()
+		srv.Shutdown(context.Background())
 	}()
-	defer wg.Done()
 	if err := srv.ListenAndServe(); err != nil {
 		cancel()
 	}
