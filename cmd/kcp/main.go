@@ -85,8 +85,21 @@ func runApp() error {
 	}
 
 	cancel()
-	wg.Wait()
+	waitWithTimeout(wg, time.Second*15)
 	return err
+}
+
+func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+
+	select {
+	case <-c:
+	case <-time.After(timeout):
+	}
 }
 
 func startListen(ctx context.Context, srv *http.Server, errc chan<- error, wg *sync.WaitGroup) {
@@ -107,9 +120,7 @@ func listenHTTP(ctx context.Context, srv *http.Server, wg *sync.WaitGroup) error
 	go func() {
 		select {
 		case <-ctx.Done():
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-			defer cancel()
-			srv.Shutdown(ctx)
+			srv.Shutdown(context.Background())
 		}
 	}()
 	defer wg.Done()
