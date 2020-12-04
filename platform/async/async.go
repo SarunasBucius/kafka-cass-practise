@@ -3,6 +3,7 @@ package async
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -84,4 +85,26 @@ type Handle struct{}
 // HandleEvent handles kcp.Event
 func (h *Handle) HandleEvent(event kcp.Event) error {
 	return nil
+}
+
+// KafkaConsumerConn returns connection to kafka consumer or an error
+func KafkaConsumerConn() (*kafka.Consumer, error) {
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": os.Getenv("KAFKA_HOST"),
+		"group.id":          "myGroup",
+		"auto.offset.reset": "earliest",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// KafkaProducerConn returns connection to kafka producer or an error
+func KafkaProducerConn() (*kafka.Producer, error) {
+	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": os.Getenv("KAFKA_HOST")})
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
 }

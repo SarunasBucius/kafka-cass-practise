@@ -11,9 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gocql/gocql"
-
 	"github.com/SarunasBucius/kafka-cass-practise/kcp"
 	"github.com/SarunasBucius/kafka-cass-practise/platform/async"
 	"github.com/SarunasBucius/kafka-cass-practise/platform/database"
@@ -37,17 +34,17 @@ func runApp() error {
 		syscall.SIGQUIT,
 	)
 
-	prod, err := kafkaProducerConn()
+	prod, err := async.KafkaProducerConn()
 	if err != nil {
 		return err
 	}
 	defer prod.Close()
-	cons, err := kafkaConsumerConn()
+	cons, err := async.KafkaConsumerConn()
 	if err != nil {
 		return err
 	}
 	defer cons.Close()
-	db, err := cassConn()
+	db, err := database.CassConn()
 	if err != nil {
 		return err
 	}
@@ -72,7 +69,7 @@ func runApp() error {
 	wg.Add(1)
 	go async.ConsumeEvents(ctx, k, cons, cancel, wg)
 	wg.Add(1)
-	go listenHTTP(ctx, srv, cancel, wg)
+	go services.ListenHTTP(ctx, srv, cancel, wg)
 
 	fmt.Println("Hello")
 	fmt.Println(version)
@@ -98,76 +95,4 @@ func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) {
 	case <-c:
 	case <-time.After(timeout):
 	}
-}
-
-func listenHTTP(ctx context.Context, srv *http.Server, cancel context.CancelFunc, wg *sync.WaitGroup) {
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		srv.Shutdown(context.Background())
-	}()
-	if err := srv.ListenAndServe(); err != nil {
-		cancel()
-	}
-}
-
-func cassConn() (*gocql.Session, error) {
-	cluster := gocql.NewCluster(os.Getenv("CASSANDRA_HOST"))
-
-	session, err := cluster.CreateSession()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := initDb(session); err != nil {
-		return nil, err
-	}
-	return session, nil
-}
-
-func initDb(s *gocql.Session) error {
-	fmt.Println("Init database")
-	err := s.Query(`DROP KEYSPACE IF EXISTS kcp`).Exec()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	err = s.Query(`CREATE  KEYSPACE IF NOT EXISTS kcp 
-			WITH REPLICATION = { 
-	   		'class' : 'SimpleStrategy',
-			'replication_factor' : 1 }`).Exec()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	err = s.Query(`CREATE TABLE kcp.visits(
-	id UUID PRIMARY KEY,
-	visited_at timestamp)`).Exec()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	return nil
-}
-
-func kafkaConsumerConn() (*kafka.Consumer, error) {
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": os.Getenv("KAFKA_HOST"),
-		"group.id":          "myGroup",
-		"auto.offset.reset": "earliest",
-	})
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
-}
-
-func kafkaProducerConn() (*kafka.Producer, error) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": os.Getenv("KAFKA_HOST")})
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
 }
