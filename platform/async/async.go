@@ -2,7 +2,6 @@ package async
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -68,7 +67,7 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, wg *sy
 				}
 			case kafka.Error:
 				if e.IsFatal() {
-					return errors.New(e.String())
+					return e
 				}
 			default:
 				fmt.Printf("Ignored %v\n", e)
