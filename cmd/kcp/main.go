@@ -70,9 +70,10 @@ func runApp() error {
 	errc := make(chan error)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
 	ctx, cancel := context.WithCancel(context.Background())
+	wg.Add(1)
 	go startConsume(ctx, k, cons, errc, wg)
+	wg.Add(1)
 	go startListen(ctx, srv, errc, wg)
 
 	fmt.Println("Hello")
