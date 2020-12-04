@@ -57,7 +57,6 @@ func runApp() error {
 	)
 
 	srv := &http.Server{
-		Addr:         ":5000",
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
