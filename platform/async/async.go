@@ -28,12 +28,17 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 		return err
 	}
 
-	e := <-p.Events()
-	m := e.(*kafka.Message)
-	if m.TopicPartition.Error != nil {
-		fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
-		return m.TopicPartition.Error
+	switch e := (<-p.Events()).(type) {
+	case *kafka.Message:
+		if e.TopicPartition.Error != nil {
+			fmt.Printf("Delivery failed: %v\n", e.TopicPartition.Error)
+			return e.TopicPartition.Error
+		}
+	case kafka.Error:
+		fmt.Println(e)
+		return e
 	}
+
 	return nil
 }
 
