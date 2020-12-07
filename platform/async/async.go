@@ -23,6 +23,7 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 	if err := p.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Value:          []byte(time.Time(event).Format(time.RFC3339)),
+		Key:            []byte{},
 	}, nil); err != nil {
 		fmt.Printf("Produce failed: %v\n", err)
 		return err
