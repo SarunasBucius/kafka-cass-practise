@@ -20,17 +20,20 @@ func New(p Producer, h Handler, i Inserter) *Kcp {
 }
 
 // Event represents event created by ProduceVisit.
-type Event time.Time
+type Event struct {
+	VisitedAt time.Time
+	IP        string
+}
 
 // Producer produces event.
 type Producer interface {
 	ProduceEvent(Event) error
 }
 
-// ProduceVisit produces visit Event and returns error.
-func (k *Kcp) ProduceVisit() error {
-	eventTime := time.Now().UTC()
-	return k.ProduceEvent(Event(eventTime))
+// ProduceVisit takes ip as param, produces visit Event and returns error.
+func (k *Kcp) ProduceVisit(ip string) error {
+	event := Event{VisitedAt: time.Now().UTC(), IP: ip}
+	return k.ProduceEvent(event)
 }
 
 // Handler interface handles event.
@@ -55,5 +58,5 @@ func (k *Kcp) InsertVisit(event Event) error {
 
 // PrintDay prints day of the week of event
 func (*Kcp) PrintDay(event Event) {
-	fmt.Println(time.Time(event).Weekday())
+	fmt.Println(time.Time(event.VisitedAt).Weekday())
 }

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -31,7 +32,8 @@ func SetRoutes(k *kcp.Kcp) *mux.Router {
 
 func visitedHandler(k *kcp.Kcp) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := k.ProduceVisit(); err != nil {
+		ip := strings.Split(r.RemoteAddr, ":")[0]
+		if err := k.ProduceVisit(ip); err != nil {
 			http.Error(w, "unexpected error occured", http.StatusInternalServerError)
 			return
 		}

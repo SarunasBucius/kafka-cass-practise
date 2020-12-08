@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/gocql/gocql"
 
@@ -20,7 +19,7 @@ func (i *Insert) InsertEvent(e kcp.Event) error {
 	return i.Query(
 		"INSERT INTO kcp.visits (id, visited_at) VALUES (?, ?)",
 		gocql.TimeUUID(),
-		time.Time(e)).Exec()
+		e.VisitedAt).Exec()
 }
 
 // CassConn returns connection to cassandra db or an error

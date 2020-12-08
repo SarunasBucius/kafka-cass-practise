@@ -22,8 +22,8 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 	topic := "visits"
 	if err := p.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          []byte(time.Time(event).Format(time.RFC3339)),
-		Key:            []byte{},
+		Value:          []byte(time.Time(event.VisitedAt).Format(time.RFC3339)),
+		Key:            []byte(event.IP),
 	}, nil); err != nil {
 		fmt.Printf("Produce failed: %v\n", err)
 		return err
@@ -70,7 +70,7 @@ func InsertEventsConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer,
 					fmt.Println(err)
 					continue
 				}
-				if err := k.InsertVisit(kcp.Event(event)); err != nil {
+				if err := k.InsertVisit(kcp.Event{VisitedAt: event}); err != nil {
 					fmt.Println(err)
 				}
 			case kafka.Error:
@@ -109,7 +109,7 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 				wg.Add(1)
 				go func(event time.Time) {
 					defer wg.Done()
-					k.PrintDay(kcp.Event(event))
+					k.PrintDay(kcp.Event{VisitedAt: event})
 				}(event)
 			case kafka.Error:
 				if e.IsFatal() {
