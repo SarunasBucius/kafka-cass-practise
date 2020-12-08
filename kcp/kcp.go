@@ -2,7 +2,10 @@
 // and data insertion.
 package kcp
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Kcp contains Producer, Handler and Insert
 type Kcp struct {
@@ -48,4 +51,9 @@ type Inserter interface {
 // InsertVisit inserts visit Event and returns error.
 func (k *Kcp) InsertVisit(event Event) error {
 	return k.InsertEvent(event)
+}
+
+// PrintDay prints day of the week of event
+func (*Kcp) PrintDay(event Event) {
+	fmt.Println(time.Time(event).Weekday())
 }
