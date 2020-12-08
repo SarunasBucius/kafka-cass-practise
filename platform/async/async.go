@@ -101,16 +101,8 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 			switch e := ev.(type) {
 			case *kafka.Message:
 				fmt.Println(cons.String())
-				event, err := time.Parse(time.RFC3339, string(e.Value))
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
 				wg.Add(1)
-				go func(event time.Time) {
-					defer wg.Done()
-					k.PrintDay(kcp.Event{VisitedAt: event})
-				}(event)
+				go asyncPrintDay(e.Value, k, wg)
 			case kafka.Error:
 				if e.IsFatal() {
 					cancel()
@@ -121,6 +113,16 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 			}
 		}
 	}
+}
+
+func asyncPrintDay(value []byte, k *kcp.Kcp, wg *sync.WaitGroup) {
+	defer wg.Done()
+	event, err := time.Parse(time.RFC3339, string(value))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	k.PrintDay(kcp.Event{VisitedAt: event})
 }
 
 // Handle empty struct to use as receiver for HandleEvent
