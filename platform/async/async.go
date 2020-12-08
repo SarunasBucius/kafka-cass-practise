@@ -92,13 +92,20 @@ func (h *Handle) HandleEvent(event kcp.Event) error {
 	return nil
 }
 
-// KafkaConsumerConn returns connection to kafka consumer or an error
-func KafkaConsumerConn() (*kafka.Consumer, error) {
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+// KafkaConsumerConn takes groupID and optional options as param, returns connection to kafka consumer or an error.
+func KafkaConsumerConn(groupID string, options ...map[string]kafka.ConfigValue) (*kafka.Consumer, error) {
+	config := &kafka.ConfigMap{
 		"bootstrap.servers": os.Getenv("KAFKA_HOST"),
-		"group.id":          "myGroup",
+		"group.id":          groupID,
 		"auto.offset.reset": "earliest",
-	})
+	}
+	if options != nil {
+		for i, val := range options[0] {
+			config.SetKey(i, val)
+		}
+	}
+
+	c, err := kafka.NewConsumer(config)
 	if err != nil {
 		return nil, err
 	}
