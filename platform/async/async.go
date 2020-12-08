@@ -43,8 +43,8 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 	return nil
 }
 
-// ConsumeEvents consumes events from kafka
-func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
+// InsertEventsConsumer inserts events from kafka consumer.
+func InsertEventsConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
 		fmt.Printf("Subscription failed: %v\n", err)
@@ -64,6 +64,7 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel
 
 			switch e := ev.(type) {
 			case *kafka.Message:
+				fmt.Println(cons.String())
 				event, err := time.Parse(time.RFC3339, string(e.Value))
 				if err != nil {
 					fmt.Println(err)
@@ -72,6 +73,44 @@ func ConsumeEvents(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel
 				if err := k.InsertVisit(kcp.Event(event)); err != nil {
 					fmt.Println(err)
 				}
+			case kafka.Error:
+				if e.IsFatal() {
+					cancel()
+					return
+				}
+			default:
+				fmt.Printf("Ignored %v\n", e)
+			}
+		}
+	}
+}
+
+// PrintDayConsumer prints day from consumed events.
+func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
+		cancel()
+		return
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case ev := <-cons.Events():
+			switch e := ev.(type) {
+			case *kafka.Message:
+				fmt.Println(cons.String())
+				event, err := time.Parse(time.RFC3339, string(e.Value))
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				wg.Add(1)
+				go func(event time.Time) {
+					defer wg.Done()
+					k.PrintDay(kcp.Event(event))
+				}(event)
 			case kafka.Error:
 				if e.IsFatal() {
 					cancel()

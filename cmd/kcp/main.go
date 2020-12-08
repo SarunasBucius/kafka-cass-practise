@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+
 	"github.com/SarunasBucius/kafka-cass-practise/kcp"
 	"github.com/SarunasBucius/kafka-cass-practise/platform/async"
 	"github.com/SarunasBucius/kafka-cass-practise/platform/database"
@@ -38,11 +40,25 @@ func runApp() error {
 		return err
 	}
 	defer prod.Close()
-	cons, err := async.KafkaConsumerConn()
+	cins1, err := async.KafkaConsumerConn("inserter")
 	if err != nil {
 		return err
 	}
-	defer cons.Close()
+	defer cins1.Close()
+	cins2, err := async.KafkaConsumerConn("inserter")
+	if err != nil {
+		return err
+	}
+	defer cins2.Close()
+	cday, err := async.KafkaConsumerConn("day", map[string]kafka.ConfigValue{
+		"go.events.channel.enable": true,
+		"go.events.channel.size":   5,
+	})
+	if err != nil {
+		return err
+	}
+	defer cday.Close()
+
 	db, err := database.CassConn()
 	if err != nil {
 		return err
@@ -65,7 +81,12 @@ func runApp() error {
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	wg.Add(1)
-	go async.ConsumeEvents(ctx, k, cons, cancel, wg)
+	go async.InsertEventsConsumer(ctx, k, cins1, cancel, wg)
+	wg.Add(1)
+	go async.InsertEventsConsumer(ctx, k, cins2, cancel, wg)
+	wg.Add(1)
+	go async.PrintDayConsumer(ctx, k, cday, cancel, wg)
+
 	wg.Add(1)
 	go services.ListenHTTP(ctx, srv, cancel, wg)
 
