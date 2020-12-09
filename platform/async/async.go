@@ -1,11 +1,12 @@
 package async
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"fmt"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
@@ -20,9 +21,13 @@ type Produce struct {
 // ProduceEvent produces kcp.Event to kafka
 func (p *Produce) ProduceEvent(event kcp.Event) error {
 	topic := "visits"
+	b, err := encodeGob(event)
+	if err != nil {
+		return err
+	}
 	if err := p.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          []byte(time.Time(event.VisitedAt).Format(time.RFC3339)),
+		Value:          b,
 		Key:            []byte(event.IP),
 	}, nil); err != nil {
 		fmt.Printf("Produce failed: %v\n", err)
@@ -65,12 +70,12 @@ func InsertEventsConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer,
 			switch e := ev.(type) {
 			case *kafka.Message:
 				fmt.Println(cons.String())
-				event, err := time.Parse(time.RFC3339, string(e.Value))
+				event, err := decodeGob(e.Value)
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
-				if err := k.InsertVisit(kcp.Event{VisitedAt: event}); err != nil {
+				if err := k.InsertVisit(event); err != nil {
 					fmt.Println(err)
 				}
 			case kafka.Error:
@@ -117,12 +122,30 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 
 func asyncPrintDay(value []byte, k *kcp.Kcp, wg *sync.WaitGroup) {
 	defer wg.Done()
-	event, err := time.Parse(time.RFC3339, string(value))
+	event, err := decodeGob(value)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	k.PrintDay(kcp.Event{VisitedAt: event})
+	k.PrintDay(event)
+}
+
+func encodeGob(event kcp.Event) ([]byte, error) {
+	var b bytes.Buffer
+	if err := gob.NewEncoder(&b).Encode(event); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return b.Bytes(), nil
+}
+
+func decodeGob(data []byte) (kcp.Event, error) {
+	var event kcp.Event
+	if err := gob.NewDecoder(bytes.NewBuffer(data)).Decode(&event); err != nil {
+		fmt.Println(err)
+		return kcp.Event{}, err
+	}
+	return event, nil
 }
 
 // Handle empty struct to use as receiver for HandleEvent
