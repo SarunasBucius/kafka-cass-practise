@@ -101,6 +101,7 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 	}
 
 	offsetDif := 0
+	done := make(chan struct{}, 5)
 	for {
 		offsetDif, _ = commitOffset(offsetDif, 5, cons)
 		select {
@@ -109,12 +110,13 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 		// Or could just leave default auto commit every X seconds
 		case <-time.After(time.Second * 5):
 			offsetDif, _ = commitOffset(offsetDif, 1, cons)
+		case <-done:
+			offsetDif++
 		case ev := <-cons.Events():
 			switch e := ev.(type) {
 			case *kafka.Message:
-				offsetDif++
 				wg.Add(1)
-				go asyncPrintDay(e.Value, k, wg)
+				go asyncPrintDay(e.Value, k, wg, done)
 			case kafka.Error:
 				if e.IsFatal() {
 					cancel()
@@ -138,8 +140,11 @@ func commitOffset(offset, minOffset int, cons *kafka.Consumer) (int, error) {
 	return offset, nil
 }
 
-func asyncPrintDay(value []byte, k *kcp.Kcp, wg *sync.WaitGroup) {
+func asyncPrintDay(value []byte, k *kcp.Kcp, wg *sync.WaitGroup, done chan<- struct{}) {
 	defer wg.Done()
+	defer func() {
+		done <- struct{}{}
+	}()
 	event, err := decodeGob(value)
 	if err != nil {
 		fmt.Println(err)
