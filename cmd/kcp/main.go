@@ -53,6 +53,7 @@ func runApp() error {
 	cday, err := async.KafkaConsumerConn("day", map[string]kafka.ConfigValue{
 		"go.events.channel.enable": true,
 		"go.events.channel.size":   5,
+		"enable.auto.commit":       false,
 	})
 	if err != nil {
 		return err

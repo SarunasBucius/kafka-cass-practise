@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
@@ -92,20 +93,26 @@ func InsertEventsConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer,
 
 // PrintDayConsumer prints day from consumed events.
 func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	defer cons.Commit()
 	defer wg.Done()
 	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
 		cancel()
 		return
 	}
 
+	offsetDif := 0
 	for {
+		offsetDif, _ = commitOffset(offsetDif, 5, cons)
 		select {
 		case <-ctx.Done():
 			return
+		// Or could just leave default auto commit every X seconds
+		case <-time.After(time.Second * 5):
+			offsetDif, _ = commitOffset(offsetDif, 1, cons)
 		case ev := <-cons.Events():
 			switch e := ev.(type) {
 			case *kafka.Message:
-				fmt.Println(cons.String())
+				offsetDif++
 				wg.Add(1)
 				go asyncPrintDay(e.Value, k, wg)
 			case kafka.Error:
@@ -118,6 +125,17 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 			}
 		}
 	}
+}
+
+func commitOffset(offset, minOffset int, cons *kafka.Consumer) (int, error) {
+	if offset >= minOffset {
+		if _, err := cons.Commit(); err != nil {
+			fmt.Println(err)
+			return offset, err
+		}
+		return 0, nil
+	}
+	return offset, nil
 }
 
 func asyncPrintDay(value []byte, k *kcp.Kcp, wg *sync.WaitGroup) {
