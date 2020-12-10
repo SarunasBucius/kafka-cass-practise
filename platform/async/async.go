@@ -57,6 +57,7 @@ type VisitInserter interface {
 // InsertEventsConsumer inserts events from kafka consumer.
 func InsertEventsConsumer(ctx context.Context, v VisitInserter, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer cons.Close()
 	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
 		fmt.Printf("Subscription failed: %v\n", err)
 		cancel()
@@ -103,8 +104,9 @@ type DayPrinter interface {
 
 // PrintDayConsumer prints day from consumed events.
 func PrintDayConsumer(ctx context.Context, d DayPrinter, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
-	defer cons.Commit()
 	defer wg.Done()
+	defer cons.Close()
+	defer cons.Commit()
 	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
 		cancel()
 		return

@@ -44,12 +44,10 @@ func runApp() error {
 	if err != nil {
 		return err
 	}
-	defer cins1.Close()
 	cins2, err := async.KafkaConsumerConn("inserter")
 	if err != nil {
 		return err
 	}
-	defer cins2.Close()
 	cday, err := async.KafkaConsumerConn("day", map[string]kafka.ConfigValue{
 		"go.events.channel.enable": true,
 		"go.events.channel.size":   5,
@@ -58,7 +56,6 @@ func runApp() error {
 	if err != nil {
 		return err
 	}
-	defer cday.Close()
 
 	db, err := database.CassConn()
 	if err != nil {
