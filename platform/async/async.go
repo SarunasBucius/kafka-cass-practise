@@ -49,8 +49,13 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 	return nil
 }
 
+// VisitInserter contains method to insert visit.
+type VisitInserter interface {
+	InsertVisit(kcp.Event) error
+}
+
 // InsertEventsConsumer inserts events from kafka consumer.
-func InsertEventsConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func InsertEventsConsumer(ctx context.Context, v VisitInserter, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
 		fmt.Printf("Subscription failed: %v\n", err)
@@ -76,7 +81,7 @@ func InsertEventsConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer,
 					fmt.Println(err)
 					continue
 				}
-				if err := k.InsertVisit(event); err != nil {
+				if err := v.InsertVisit(event); err != nil {
 					fmt.Println(err)
 				}
 			case kafka.Error:
@@ -91,8 +96,13 @@ func InsertEventsConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer,
 	}
 }
 
+// DayPrinter contains method to print day
+type DayPrinter interface {
+	PrintDay(kcp.Event)
+}
+
 // PrintDayConsumer prints day from consumed events.
-func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func PrintDayConsumer(ctx context.Context, d DayPrinter, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer cons.Commit()
 	defer wg.Done()
 	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
@@ -116,7 +126,7 @@ func PrintDayConsumer(ctx context.Context, k *kcp.Kcp, cons *kafka.Consumer, can
 			switch e := ev.(type) {
 			case *kafka.Message:
 				wg.Add(1)
-				go asyncPrintDay(e.Value, k, wg, done)
+				go asyncPrintDay(e.Value, d, wg, done)
 			case kafka.Error:
 				if e.IsFatal() {
 					cancel()
@@ -140,7 +150,7 @@ func commitOffset(offset, minOffset int, cons *kafka.Consumer) (int, error) {
 	return offset, nil
 }
 
-func asyncPrintDay(value []byte, k *kcp.Kcp, wg *sync.WaitGroup, done chan<- struct{}) {
+func asyncPrintDay(value []byte, d DayPrinter, wg *sync.WaitGroup, done chan<- struct{}) {
 	defer wg.Done()
 	defer func() {
 		done <- struct{}{}
@@ -150,7 +160,7 @@ func asyncPrintDay(value []byte, k *kcp.Kcp, wg *sync.WaitGroup, done chan<- str
 		fmt.Println(err)
 		return
 	}
-	k.PrintDay(event)
+	d.PrintDay(event)
 }
 
 func encodeGob(event kcp.Event) ([]byte, error) {
