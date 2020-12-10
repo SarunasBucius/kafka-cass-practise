@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -40,23 +39,6 @@ func runApp() error {
 		return err
 	}
 	defer prod.Close()
-	cins1, err := async.KafkaConsumerConn("inserter")
-	if err != nil {
-		return err
-	}
-	cins2, err := async.KafkaConsumerConn("inserter")
-	if err != nil {
-		return err
-	}
-	cday, err := async.KafkaConsumerConn("day", map[string]kafka.ConfigValue{
-		"go.events.channel.enable": true,
-		"go.events.channel.size":   5,
-		"enable.auto.commit":       false,
-	})
-	if err != nil {
-		return err
-	}
-
 	db, err := database.CassConn()
 	if err != nil {
 		return err
@@ -69,24 +51,11 @@ func runApp() error {
 		&database.Insert{Session: db},
 	)
 
-	srv := &http.Server{
-		WriteTimeout: time.Second * 15,
-		ReadTimeout:  time.Second * 15,
-		IdleTimeout:  time.Second * 60,
-		Handler:      services.SetRoutes(k),
-	}
-
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
-	wg.Add(1)
-	go async.InsertEventsConsumer(ctx, k, cins1, cancel, wg)
-	wg.Add(1)
-	go async.InsertEventsConsumer(ctx, k, cins2, cancel, wg)
-	wg.Add(1)
-	go async.PrintDayConsumer(ctx, k, cday, cancel, wg)
-
-	wg.Add(1)
-	go services.ListenHTTP(ctx, srv, cancel, wg)
+	if err := startServices(ctx, cancel, k, wg); err != nil {
+		return err
+	}
 
 	fmt.Println("Hello")
 	fmt.Println(version)
@@ -98,7 +67,39 @@ func runApp() error {
 
 	cancel()
 	waitWithTimeout(wg, time.Second*15)
-	return err
+	return nil
+}
+
+func startServices(ctx context.Context, cancel context.CancelFunc, k *kcp.Kcp, wg *sync.WaitGroup) error {
+	insertCons, err := async.KafkaConsumerConn("inserter")
+	if err != nil {
+		return err
+	}
+	wg.Add(1)
+	go async.InsertEventsConsumer(ctx, k, insertCons, cancel, wg)
+
+	insertCons2, err := async.KafkaConsumerConn("inserter")
+	if err != nil {
+		return err
+	}
+	wg.Add(1)
+	go async.InsertEventsConsumer(ctx, k, insertCons2, cancel, wg)
+
+	printDayCons, err := async.KafkaConsumerConn("day", map[string]kafka.ConfigValue{
+		"go.events.channel.enable": true,
+		"go.events.channel.size":   5,
+		"enable.auto.commit":       false,
+	})
+	if err != nil {
+		return err
+	}
+	wg.Add(1)
+	go async.PrintDayConsumer(ctx, k, printDayCons, cancel, wg)
+
+	wg.Add(1)
+	go services.ListenHTTP(ctx, k, cancel, wg)
+
+	return nil
 }
 
 func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) {

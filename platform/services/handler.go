@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -12,7 +13,13 @@ import (
 )
 
 // ListenHTTP listens and serves http requests
-func ListenHTTP(ctx context.Context, srv *http.Server, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func ListenHTTP(ctx context.Context, k *kcp.Kcp, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	srv := &http.Server{
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      SetRoutes(k),
+	}
 	go func() {
 		defer wg.Done()
 		<-ctx.Done()
