@@ -76,14 +76,14 @@ func startServices(ctx context.Context, cancel context.CancelFunc, k *kcp.Kcp, w
 		return err
 	}
 	wg.Add(1)
-	go async.InsertEventsConsumer(ctx, k, insertCons, cancel, wg)
+	go async.InsertEventsConsumer(ctx, k.InsertVisit, insertCons, cancel, wg)
 
 	insertCons2, err := async.KafkaConsumerConn("inserter")
 	if err != nil {
 		return err
 	}
 	wg.Add(1)
-	go async.InsertEventsConsumer(ctx, k, insertCons2, cancel, wg)
+	go async.InsertEventsConsumer(ctx, k.InsertVisit, insertCons2, cancel, wg)
 
 	printDayCons, err := async.KafkaConsumerConn("day", map[string]kafka.ConfigValue{
 		"go.events.channel.enable": true,
@@ -94,7 +94,7 @@ func startServices(ctx context.Context, cancel context.CancelFunc, k *kcp.Kcp, w
 		return err
 	}
 	wg.Add(1)
-	go async.PrintDayConsumer(ctx, k, printDayCons, cancel, wg)
+	go async.PrintDayConsumer(ctx, k.PrintDay, printDayCons, cancel, wg)
 
 	wg.Add(1)
 	go services.ListenHTTP(ctx, k, cancel, wg)

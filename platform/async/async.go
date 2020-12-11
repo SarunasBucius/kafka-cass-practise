@@ -49,13 +49,11 @@ func (p *Produce) ProduceEvent(event kcp.Event) error {
 	return nil
 }
 
-// VisitInserter contains method to insert visit.
-type VisitInserter interface {
-	InsertVisit(kcp.Event) error
-}
+// InsertVisit describes method to insert visit.
+type InsertVisit func(kcp.Event) error
 
 // InsertEventsConsumer inserts events from kafka consumer.
-func InsertEventsConsumer(ctx context.Context, v VisitInserter, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func InsertEventsConsumer(ctx context.Context, insertVisit InsertVisit, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer cons.Close()
 	if err := cons.SubscribeTopics([]string{"visits"}, nil); err != nil {
@@ -82,7 +80,7 @@ func InsertEventsConsumer(ctx context.Context, v VisitInserter, cons *kafka.Cons
 					fmt.Println(err)
 					continue
 				}
-				if err := v.InsertVisit(event); err != nil {
+				if err := insertVisit(event); err != nil {
 					fmt.Println(err)
 				}
 			case kafka.Error:
@@ -97,13 +95,11 @@ func InsertEventsConsumer(ctx context.Context, v VisitInserter, cons *kafka.Cons
 	}
 }
 
-// DayPrinter contains method to print day
-type DayPrinter interface {
-	PrintDay(kcp.Event)
-}
+// PrintDay describes method to print day.
+type PrintDay func(kcp.Event)
 
 // PrintDayConsumer prints day from consumed events.
-func PrintDayConsumer(ctx context.Context, d DayPrinter, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func PrintDayConsumer(ctx context.Context, printDay PrintDay, cons *kafka.Consumer, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer cons.Close()
 	defer cons.Commit()
@@ -119,7 +115,6 @@ func PrintDayConsumer(ctx context.Context, d DayPrinter, cons *kafka.Consumer, c
 		select {
 		case <-ctx.Done():
 			return
-		// Or could just leave default auto commit every X seconds
 		case <-time.After(time.Second * 5):
 			offsetDif, _ = commitOffset(offsetDif, 1, cons)
 		case <-done:
@@ -128,7 +123,7 @@ func PrintDayConsumer(ctx context.Context, d DayPrinter, cons *kafka.Consumer, c
 			switch e := ev.(type) {
 			case *kafka.Message:
 				wg.Add(1)
-				go asyncPrintDay(e.Value, d, wg, done)
+				go asyncPrintDay(e.Value, printDay, wg, done)
 			case kafka.Error:
 				if e.IsFatal() {
 					cancel()
@@ -152,7 +147,7 @@ func commitOffset(offset, minOffset int, cons *kafka.Consumer) (int, error) {
 	return offset, nil
 }
 
-func asyncPrintDay(value []byte, d DayPrinter, wg *sync.WaitGroup, done chan<- struct{}) {
+func asyncPrintDay(value []byte, printDay PrintDay, wg *sync.WaitGroup, done chan<- struct{}) {
 	defer wg.Done()
 	defer func() {
 		done <- struct{}{}
@@ -162,7 +157,7 @@ func asyncPrintDay(value []byte, d DayPrinter, wg *sync.WaitGroup, done chan<- s
 		fmt.Println(err)
 		return
 	}
-	d.PrintDay(event)
+	printDay(event)
 }
 
 func encodeGob(event kcp.Event) ([]byte, error) {
