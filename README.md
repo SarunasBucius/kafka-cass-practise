@@ -12,8 +12,8 @@ MVP should be able to:
 main() should contain 2 goroutines. One for listening to request, another for consuming events.
 
 Simple example of an app:
-Create route (for example POST /api/visited). Upon visiting, send event to kafka, containing time request was processed, and return request.
-Consume event to insert data to cassandra table (for example table 'visited' with column 'visited_at').
+Create route (for example POST /api/visits). Upon visiting, send event to kafka, containing time request was processed, and return request.
+Consume event to insert data to cassandra table (for example table 'visits' with column 'visited_at').
 
 Increase use of kafka:
 * Increase number of partitions to 2
@@ -27,7 +27,7 @@ Increase use of kafka:
 	* Use ip as event key
 
 Increase use of cassandra db:
-* Add GET /api/visited route
+* Add GET /api/visits route
 	* Returns JSON containing array with fields ip (string) and visited_at (array of strings)
 	* Can be filtered using query parameters
 		* By visited_at greater than (e.g. ?gt=2020-01)
@@ -35,7 +35,7 @@ Increase use of cassandra db:
 		* By visited_at between (e.g. ?gt=2020-01&lt=2020-02)
 			* Value must be date yyyy-mm-dd, containing atleast year
 		* By day of the week (e.g. ?day=Monday)
-* Table visited contains columns:
+* Table visits contains columns:
 	* ip - primary key
 	* visited_at - cluster key
 	* day - secondary index

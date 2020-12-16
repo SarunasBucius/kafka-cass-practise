@@ -36,11 +36,11 @@ func ListenHTTP(ctx context.Context, h Handler, cancel context.CancelFunc, wg *s
 // SetRoutes sets routes for http.ListenAndServe.
 func SetRoutes(h Handler) *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/api/visited", visitedHandler(h))
+	r.HandleFunc("/api/visits", visitHandler(h))
 	return r
 }
 
-func visitedHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
+func visitHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ip := strings.Split(r.RemoteAddr, ":")[0]
 		if err := h.ProduceVisit(ip); err != nil {
