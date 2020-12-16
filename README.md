@@ -25,3 +25,17 @@ Increase use of kafka:
 * Use acks=1
 * Change event to struct Visit with values visitedAt and ip
 	* Use ip as event key
+
+Increase use of cassandra db:
+* Add GET /api/visited route
+	* Returns JSON containing array with fields ip (string) and visited_at (array of strings)
+	* Can be filtered using query parameters
+		* By visited_at greater than (e.g. ?gt=2020-01)
+		* By visited_at less than (e.g. ?lt=2020-01)
+		* By visited_at between (e.g. ?gt=2020-01&lt=2020-02)
+			* Value must be date yyyy-mm-dd, containing atleast year
+		* By day of the week (e.g. ?day=Monday)
+* Table visited contains columns:
+	* ip - primary key
+	* visited_at - cluster key
+	* day - secondary index
