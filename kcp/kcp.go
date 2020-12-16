@@ -1,5 +1,5 @@
-// Package kcp provides event production, event consumption
-// and data insertion.
+// Package kcp provides event production, event consumption,
+// data insertion and data view.
 package kcp
 
 import (
@@ -7,16 +7,16 @@ import (
 	"time"
 )
 
-// Kcp contains Producer, Handler and Insert
+// Kcp contains Producer, Handler and DbConnector.
 type Kcp struct {
 	Producer
 	Handler
-	Inserter
+	DbConnector
 }
 
-// New takes Producer, Handler, Inserter and returns Kcp instance
-func New(p Producer, h Handler, i Inserter) *Kcp {
-	return &Kcp{Producer: p, Handler: h, Inserter: i}
+// New takes Producer, Handler, DbConnector and returns Kcp instance.
+func New(p Producer, h Handler, i DbConnector) *Kcp {
+	return &Kcp{Producer: p, Handler: h, DbConnector: i}
 }
 
 // Event represents event created by ProduceVisit.
@@ -46,8 +46,8 @@ func (k *Kcp) HandleVisit(event Event) error {
 	return k.HandleEvent(event)
 }
 
-// Inserter interface inserts event.
-type Inserter interface {
+// DbConnector interface contains methods concerned with database.
+type DbConnector interface {
 	InsertEvent(Event) error
 }
 
