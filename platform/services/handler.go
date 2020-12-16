@@ -37,6 +37,7 @@ func ListenHTTP(ctx context.Context, h Handler, cancel context.CancelFunc, wg *s
 func SetRoutes(h Handler) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/api/visits", postVisitHandler(h)).Methods("POST")
+	r.HandleFunc("/api/visits", getVisitsHandler(h)).Methods("GET")
 	return r
 }
 
@@ -47,5 +48,11 @@ func postVisitHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "unexpected error occured", http.StatusInternalServerError)
 			return
 		}
+	}
+}
+
+func getVisitsHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
 	}
 }
