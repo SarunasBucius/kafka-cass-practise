@@ -44,7 +44,7 @@ func (db *Db) GetVisits() (kcp.VisitsByIP, error) {
 // CassConn returns connection to cassandra db or an error
 func CassConn() (*gocql.Session, error) {
 	cluster := gocql.NewCluster(os.Getenv("CASSANDRA_HOST"))
-
+	cluster.Timeout = time.Second * 2
 	session, err := cluster.CreateSession()
 	if err != nil {
 		return nil, err
