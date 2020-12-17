@@ -68,8 +68,7 @@ type VisitsByIP struct {
 
 // GetVisits get visits grouped by ip
 func (k *Kcp) GetVisits() ([]VisitsByIP, error) {
-	k.DbConnector.GetVisits()
-	return nil, nil
+	return k.DbConnector.GetVisits()
 }
 
 // PrintDay prints day of the week of event
