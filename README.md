@@ -39,3 +39,6 @@ Increase use of cassandra db:
 	* ip - primary key
 	* visited_at - cluster key
 	* day - secondary index
+* Add GET /api/visits/{ip}
+	* Returns JSON containing ip and array of visited_at values
+	* Supports same filters as /api/visits
