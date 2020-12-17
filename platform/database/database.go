@@ -56,8 +56,17 @@ func initDb(s *gocql.Session) error {
 
 	if err := s.Query(`
 	CREATE TABLE kcp.visits(
-		id UUID PRIMARY KEY,
-		visited_at timestamp)`,
+		ip text,
+		visited_at timestamp,
+		day text,
+		PRIMARY KEY (ip, visited_at))`,
+	).Exec(); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	if err := s.Query(`
+	CREATE INDEX IF NOT EXISTS ON kcp.visits (day)`,
 	).Exec(); err != nil {
 		fmt.Println(err)
 		return err
