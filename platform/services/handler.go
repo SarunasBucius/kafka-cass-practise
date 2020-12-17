@@ -16,7 +16,7 @@ import (
 // Handler contains methods to handle request.
 type Handler interface {
 	ProduceVisit(ip string) error
-	GetVisits() ([]kcp.VisitsByIP, error)
+	GetVisits() (kcp.VisitsByIP, error)
 }
 
 // ListenHTTP listens and serves http requests.

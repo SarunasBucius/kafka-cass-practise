@@ -52,7 +52,7 @@ func (k *Kcp) HandleVisit(event Event) error {
 // DbConnector interface contains methods concerned with database.
 type DbConnector interface {
 	InsertEvent(Event) error
-	GetVisits() ([]VisitsByIP, error)
+	GetVisits() (VisitsByIP, error)
 }
 
 // InsertVisit inserts visit Event and returns error.
@@ -60,14 +60,11 @@ func (k *Kcp) InsertVisit(event Event) error {
 	return k.InsertEvent(event)
 }
 
-// VisitsByIP contains ip and slice of visits
-type VisitsByIP struct {
-	IP        string
-	VisitedAt []time.Time
-}
+// VisitsByIP contains ip and slice of visit times
+type VisitsByIP map[string][]time.Time
 
 // GetVisits get visits grouped by ip
-func (k *Kcp) GetVisits() ([]VisitsByIP, error) {
+func (k *Kcp) GetVisits() (VisitsByIP, error) {
 	return k.DbConnector.GetVisits()
 }
 
