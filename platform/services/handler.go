@@ -2,17 +2,21 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
+
+	"github.com/SarunasBucius/kafka-cass-practise/kcp"
 )
 
 // Handler contains methods to handle request.
 type Handler interface {
 	ProduceVisit(ip string) error
+	GetVisits() ([]kcp.VisitsByIP, error)
 }
 
 // ListenHTTP listens and serves http requests.
@@ -53,6 +57,16 @@ func postVisitHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 
 func getVisitsHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		visits, err := h.GetVisits()
+		if err != nil {
+			http.Error(w, "unexpected error occured", http.StatusInternalServerError)
+			return
+		}
 
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(visits); err != nil {
+			http.Error(w, "unexpected error occured", http.StatusInternalServerError)
+			return
+		}
 	}
 }
