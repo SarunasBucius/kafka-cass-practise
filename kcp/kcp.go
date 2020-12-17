@@ -3,7 +3,9 @@
 package kcp
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -53,6 +55,7 @@ func (k *Kcp) HandleVisit(event Event) error {
 type DbConnector interface {
 	InsertEvent(Event) error
 	GetVisits() (VisitsByIP, error)
+	GetVisitsRange(lt, gt time.Time) (VisitsByIP, error)
 }
 
 // InsertVisit inserts visit Event and returns error.
@@ -63,9 +66,91 @@ func (k *Kcp) InsertVisit(event Event) error {
 // VisitsByIP contains ip and slice of visit times
 type VisitsByIP map[string][]time.Time
 
+// ErrInvalidFilter returned if filter parameter is invalid
+var ErrInvalidFilter = errors.New("invalid filter parameter")
+
 // GetVisits get visits grouped by ip
-func (k *Kcp) GetVisits() (VisitsByIP, error) {
-	return k.DbConnector.GetVisits()
+func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
+	var err error
+	var gt time.Time
+	// check if filter for greater than is passed and get valid time.Time value
+	if filter["gt"] != "" {
+		gt, err = formatTime(filter["gt"])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var lt time.Time
+	// check if filter for less than is passed and get valid time.Time value
+	if filter["lt"] != "" {
+		lt, err = formatTime(filter["lt"])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var day string
+	// check if filter for day is passed and is valid
+	if filter["day"] != "" {
+		for i := 0; i < 7; i++ {
+			if time.Weekday(i).String() == filter["day"] {
+				day = filter["day"]
+				break
+			}
+		}
+		if day == "" {
+			return nil, ErrInvalidFilter
+		}
+	}
+
+	visits, err := k.DbConnector.GetVisits()
+	if err != nil {
+		return nil, err
+	}
+
+	// filter data
+	for i, visitsByIP := range visits {
+		var filtered []time.Time
+		for _, visit := range visitsByIP {
+			if !gt.IsZero() && visit.Before(gt) {
+				continue
+			}
+			if !lt.IsZero() && visit.After(lt) {
+				continue
+			}
+			if day != "" && day != visit.Weekday().String() {
+				continue
+			}
+			filtered = append(filtered, visit)
+		}
+		if filtered == nil {
+			delete(visits, i)
+			continue
+		}
+		visits[i] = filtered
+	}
+	return visits, err
+}
+
+func formatTime(unf string) (time.Time, error) {
+	// split string to get year, month, day
+	dateParts := strings.Split(unf, "-")
+	if len(dateParts) == 0 || len(dateParts) > 3 {
+		return time.Time{}, ErrInvalidFilter
+	}
+
+	// add month and day if missing
+	for i := len(dateParts); i < 3; i++ {
+		unf += "-01"
+	}
+
+	f, err := time.Parse("2006-01-02", unf)
+	if err != nil {
+		fmt.Println(err)
+		return time.Time{}, err
+	}
+	return f, nil
 }
 
 // PrintDay prints day of the week of event

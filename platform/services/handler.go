@@ -16,7 +16,7 @@ import (
 // Handler contains methods to handle request.
 type Handler interface {
 	ProduceVisit(ip string) error
-	GetVisits() (kcp.VisitsByIP, error)
+	GetVisits(filter map[string]string) (kcp.VisitsByIP, error)
 }
 
 // ListenHTTP listens and serves http requests.
@@ -57,7 +57,11 @@ func postVisitHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 
 func getVisitsHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		visits, err := h.GetVisits()
+		filter := make(map[string]string)
+		for f, val := range r.URL.Query() {
+			filter[f] = val[0]
+		}
+		visits, err := h.GetVisits(filter)
 		if err != nil {
 			http.Error(w, "unexpected error occured", http.StatusInternalServerError)
 			return
