@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gocql/gocql"
 
@@ -24,8 +25,20 @@ func (db *Db) InsertEvent(e kcp.Event) error {
 }
 
 // GetVisits get visits grouped by ip
-func (db *Db) GetVisits() ([]kcp.VisitsByIP, error) {
-	return nil, nil
+func (db *Db) GetVisits() (kcp.VisitsByIP, error) {
+	iter := db.Query("SELECT ip, visited_at FROM kcp.visits").Iter()
+
+	var ip string
+	var t time.Time
+	visits := make(kcp.VisitsByIP)
+	for iter.Scan(&ip, &t) {
+		visits[ip] = append(visits[ip], t)
+	}
+	if err := iter.Close(); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return visits, nil
 }
 
 // CassConn returns connection to cassandra db or an error
