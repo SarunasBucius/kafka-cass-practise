@@ -23,6 +23,7 @@ func New(p Producer, h Handler, i DbConnector) *Kcp {
 type Event struct {
 	VisitedAt time.Time
 	IP        string
+	Day       string
 }
 
 // Producer produces event.
@@ -32,7 +33,9 @@ type Producer interface {
 
 // ProduceVisit takes ip as param, produces visit Event and returns error.
 func (k *Kcp) ProduceVisit(ip string) error {
-	event := Event{VisitedAt: time.Now().UTC(), IP: ip}
+	now := time.Now().UTC()
+	day := time.Time(now).Weekday().String()
+	event := Event{VisitedAt: now, IP: ip, Day: day}
 	return k.ProduceEvent(event)
 }
 
@@ -58,5 +61,5 @@ func (k *Kcp) InsertVisit(event Event) error {
 
 // PrintDay prints day of the week of event
 func (*Kcp) PrintDay(event Event) {
-	fmt.Println(time.Time(event.VisitedAt).Weekday())
+	fmt.Println(event.Day)
 }
