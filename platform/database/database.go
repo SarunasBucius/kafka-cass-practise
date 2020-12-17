@@ -15,12 +15,17 @@ type Db struct {
 }
 
 // InsertEvent inserts kcp.Event into cassandra db
-func (i *Db) InsertEvent(e kcp.Event) error {
-	return i.Query(
+func (db *Db) InsertEvent(e kcp.Event) error {
+	return db.Query(
 		"INSERT INTO kcp.visits (ip, visited_at, day) VALUES (?, ?, ?)",
 		e.IP,
 		e.VisitedAt,
 		e.Day).Exec()
+}
+
+// GetVisits get visits grouped by ip
+func (db *Db) GetVisits() ([]kcp.VisitsByIP, error) {
+	return nil, nil
 }
 
 // CassConn returns connection to cassandra db or an error
