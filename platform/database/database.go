@@ -41,6 +41,11 @@ func (db *Db) GetVisits() (kcp.VisitsByIP, error) {
 	return visits, nil
 }
 
+// GetVisitsByIP gets visits from provided ip.
+func (db *Db) GetVisitsByIP(ip string) (kcp.VisitsByIP, error) {
+	return nil, nil
+}
+
 // CassConn returns connection to cassandra db or an error
 func CassConn() (*gocql.Session, error) {
 	cluster := gocql.NewCluster(os.Getenv("CASSANDRA_HOST"))

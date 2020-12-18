@@ -158,7 +158,7 @@ func formatTime(filter map[string]string, key string) (time.Time, error) {
 }
 
 // GetVisitsByIP gets visits from provided ip.
-func (k *Kcp) GetVisitsByIP(ip string) (VisitsByIP, error) {
+func (k *Kcp) GetVisitsByIP(ip string, filter map[string]string) (VisitsByIP, error) {
 	return k.DbConnector.GetVisitsByIP(ip)
 }
 
