@@ -41,9 +41,31 @@ func (db *Db) GetVisits() (kcp.VisitsByIP, error) {
 	return visits, nil
 }
 
-// GetVisitsByIP gets visits from provided ip.
-func (db *Db) GetVisitsByIP(ip string) (kcp.VisitsByIP, error) {
-	iter := db.Query("SELECT visited_at FROM kcp.visits WHERE ip=?", ip).Iter()
+// GetVisitsByIP get filtered visits by ip.
+func (db *Db) GetVisitsByIP(ip, day string, gt, lt time.Time) (kcp.VisitsByIP, error) {
+	var params []interface{}
+	q := fmt.Sprint(`
+	SELECT visited_at 
+	FROM kcp.visits 
+	WHERE ip=?
+	`)
+	params = append(params, ip)
+
+	if !gt.IsZero() {
+		q = fmt.Sprintf("%v AND visited_at > ?", q)
+		params = append(params, gt)
+	}
+
+	if !lt.IsZero() {
+		q = fmt.Sprintf("%v AND visited_at < ?", q)
+		params = append(params, lt)
+	}
+
+	if day != "" {
+		q = fmt.Sprintf("%v AND day = ?", q)
+		params = append(params, day)
+	}
+	iter := db.Query(q, params...).Iter()
 
 	var t time.Time
 	visits := make(kcp.VisitsByIP)
