@@ -43,7 +43,18 @@ func (db *Db) GetVisits() (kcp.VisitsByIP, error) {
 
 // GetVisitsByIP gets visits from provided ip.
 func (db *Db) GetVisitsByIP(ip string) (kcp.VisitsByIP, error) {
-	return nil, nil
+	iter := db.Query("SELECT visited_at FROM kcp.visits WHERE ip=?", ip).Iter()
+
+	var t time.Time
+	visits := make(kcp.VisitsByIP)
+	for iter.Scan(&t) {
+		visits[ip] = append(visits[ip], t)
+	}
+	if err := iter.Close(); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return visits, nil
 }
 
 // CassConn returns connection to cassandra db or an error
