@@ -55,7 +55,7 @@ func (k *Kcp) HandleVisit(event Event) error {
 type DbConnector interface {
 	InsertEvent(Event) error
 	GetVisits() (VisitsByIP, error)
-	GetVisitsRange(lt, gt time.Time) (VisitsByIP, error)
+	GetVisitsByIP(ip string) (VisitsByIP, error)
 }
 
 // InsertVisit inserts visit Event and returns error.
@@ -155,6 +155,11 @@ func formatTime(filter map[string]string, key string) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return f, nil
+}
+
+// GetVisitsByIP gets visits from provided ip.
+func (k *Kcp) GetVisitsByIP(ip string) (VisitsByIP, error) {
+	return k.DbConnector.GetVisitsByIP(ip)
 }
 
 // PrintDay prints day of the week of event
