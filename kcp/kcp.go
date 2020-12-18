@@ -1,5 +1,13 @@
-// Package kcp provides event production, event consumption,
-// data insertion and data view.
+// Package kcp provides visits tracking.
+//
+// Supported features:
+//  * Produce event of visit
+//  * Insert event of visit to storage
+//  * Print week day of visit
+//  * Get all events from storage
+//   * Filters visits by time greater than (gt), less than (lt), day of the week (day)
+//  * Get events by same ip from storage
+//   * Filters visits by time greater than (gt), less than (lt), day of the week (day)
 package kcp
 
 import (
@@ -9,13 +17,13 @@ import (
 	"time"
 )
 
-// Kcp contains Producer, Handler and DbConnector.
+// Kcp contains Producer and DbConnector.
 type Kcp struct {
 	Producer
 	DbConnector
 }
 
-// New takes Producer, Handler, DbConnector and returns Kcp instance.
+// New takes Producer, DbConnector and returns Kcp instance.
 func New(p Producer, i DbConnector) *Kcp {
 	return &Kcp{Producer: p, DbConnector: i}
 }
@@ -52,13 +60,13 @@ func (k *Kcp) InsertVisit(event Event) error {
 	return k.InsertEvent(event)
 }
 
-// VisitsByIP contains ip and slice of visit times
+// VisitsByIP contains ip and slice of visit times.
 type VisitsByIP map[string][]time.Time
 
-// ErrInvalidFilter returned if filter parameter is invalid
+// ErrInvalidFilter is returned if filter parameter is invalid.
 var ErrInvalidFilter = errors.New("invalid filter parameter")
 
-// GetVisits get visits grouped by ip
+// GetVisits get visits grouped by ip.
 func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
 	// check if filter for greater than is passed and get valid time.Time value
 	gt, err := formatTime(filter, "gt")
@@ -168,7 +176,7 @@ func (k *Kcp) GetVisitsByIP(ip string, filter map[string]string) (VisitsByIP, er
 	return k.DbConnector.GetVisitsByIP(ip, day, gt, lt)
 }
 
-// PrintDay prints day of the week of event
+// PrintDay prints day of the week of event.
 func (*Kcp) PrintDay(event Event) {
 	fmt.Println(event.Day)
 }
