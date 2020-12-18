@@ -17,7 +17,7 @@ import (
 type Handler interface {
 	ProduceVisit(ip string) error
 	GetVisits(filter map[string]string) (kcp.VisitsByIP, error)
-	GetVisitsByIP(filter map[string]string) (kcp.VisitsByIP, error)
+	GetVisitsByIP(ip string, filter map[string]string) (kcp.VisitsByIP, error)
 }
 
 // ListenHTTP listens and serves http requests.
@@ -79,11 +79,12 @@ func getVisitsHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 
 func getVisitsByIPHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
 		filter := make(map[string]string)
 		for f, val := range r.URL.Query() {
 			filter[f] = val[0]
 		}
-		visits, err := h.GetVisitsByIP(filter)
+		visits, err := h.GetVisitsByIP(vars["ip"], filter)
 		if err != nil {
 			http.Error(w, "unexpected error occured", http.StatusInternalServerError)
 			return
