@@ -71,39 +71,25 @@ var ErrInvalidFilter = errors.New("invalid filter parameter")
 
 // GetVisits get visits grouped by ip
 func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
-	var err error
-	var gt time.Time
 	// check if filter for greater than is passed and get valid time.Time value
-	if filter["gt"] != "" {
-		gt, err = formatTime(filter["gt"])
-		if err != nil {
-			return nil, err
-		}
+	gt, err := formatTime(filter, "gt")
+	if err != nil {
+		return nil, err
 	}
 
-	var lt time.Time
 	// check if filter for less than is passed and get valid time.Time value
-	if filter["lt"] != "" {
-		lt, err = formatTime(filter["lt"])
-		if err != nil {
-			return nil, err
-		}
+	lt, err := formatTime(filter, "lt")
+	if err != nil {
+		return nil, err
 	}
 
-	var day string
 	// check if filter for day is passed and is valid
-	if filter["day"] != "" {
-		for i := 0; i < 7; i++ {
-			if time.Weekday(i).String() == filter["day"] {
-				day = filter["day"]
-				break
-			}
-		}
-		if day == "" {
-			return nil, ErrInvalidFilter
-		}
+	day, err := isValidDay(filter)
+	if err != nil {
+		return nil, err
 	}
 
+	// get visits from db
 	visits, err := k.DbConnector.GetVisits()
 	if err != nil {
 		return nil, err
@@ -133,7 +119,25 @@ func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
 	return visits, err
 }
 
-func formatTime(unf string) (time.Time, error) {
+func isValidDay(filter map[string]string) (string, error) {
+	if filter["day"] == "" {
+		return "", nil
+	}
+	for i := 0; i < 7; i++ {
+		if time.Weekday(i).String() == filter["day"] {
+			return filter["day"], nil
+		}
+	}
+	return "", ErrInvalidFilter
+}
+
+func formatTime(filter map[string]string, key string) (time.Time, error) {
+	// check if value is passed
+	unf := filter[key]
+	if unf == "" {
+		return time.Time{}, nil
+	}
+
 	// split string to get year, month, day
 	dateParts := strings.Split(unf, "-")
 	if len(dateParts) == 0 || len(dateParts) > 3 {
