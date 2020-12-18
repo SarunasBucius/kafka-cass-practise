@@ -128,5 +128,20 @@ func initDb(s *gocql.Session) error {
 		fmt.Println(err)
 		return err
 	}
+
+	return initialData(s)
+}
+
+func initialData(s *gocql.Session) error {
+	for i := 0; i < 50; i++ {
+		if err := s.Query(
+			"INSERT INTO kcp.visits (ip, visited_at, day) VALUES (?, ?, ?)",
+			"172.19.0."+fmt.Sprint(i%5),
+			time.Now().UTC().AddDate(0, i%5, i),
+			time.Now().UTC().AddDate(0, i%5, i).Weekday().String(),
+		).Exec(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
