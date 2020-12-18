@@ -47,7 +47,6 @@ func runApp() error {
 
 	k := kcp.New(
 		&async.Produce{Producer: prod},
-		&async.Handle{},
 		&database.Db{Session: db},
 	)
 
