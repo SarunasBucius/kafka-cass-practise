@@ -21,7 +21,6 @@ start:
 stop:
 	docker-compose down
 
-rebuild:
-	make stop;
-	make build;
-	make start;
+codecov:
+	go test ./... -coverprofile coverage.out;
+	go tool cover -html=coverage.out;
