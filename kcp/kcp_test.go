@@ -58,3 +58,16 @@ func (a approxTime) String() string {
 	event := kcp.Event{VisitedAt: now, Day: now.Weekday().String(), IP: a.ip}
 	return fmt.Sprintf("%v, with deviation of %v", event, a.dev)
 }
+
+func TestInsertVisit(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockDb := mocks.NewMockDbConnector(mockCtrl)
+	k := kcp.New(nil, mockDb)
+
+	event := kcp.Event{}
+	mockDb.EXPECT().InsertEvent(event).Return(nil)
+
+	k.InsertVisit(event)
+}
