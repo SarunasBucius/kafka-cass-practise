@@ -1,4 +1,4 @@
-package kcp_test
+package kcp
 
 import (
 	"fmt"
@@ -6,17 +6,14 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-
-	"github.com/SarunasBucius/kafka-cass-practise/kcp"
-	"github.com/SarunasBucius/kafka-cass-practise/mocks"
 )
 
 func TestProduceVisit(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockProdEvent := mocks.NewMockProducer(mockCtrl)
-	k := kcp.New(mockProdEvent, nil)
+	mockProdEvent := NewMockProducer(mockCtrl)
+	k := New(mockProdEvent, nil)
 
 	param := "ip"
 	mockProdEvent.EXPECT().
@@ -33,7 +30,7 @@ type approxTime struct {
 }
 
 func (a approxTime) Matches(event interface{}) bool {
-	ev, ok := event.(kcp.Event)
+	ev, ok := event.(Event)
 	if !ok {
 		return false
 	}
@@ -55,7 +52,7 @@ func (a approxTime) Matches(event interface{}) bool {
 
 func (a approxTime) String() string {
 	now := time.Now().UTC()
-	event := kcp.Event{VisitedAt: now, Day: now.Weekday().String(), IP: a.ip}
+	event := Event{VisitedAt: now, Day: now.Weekday().String(), IP: a.ip}
 	return fmt.Sprintf("%v, with deviation of %v", event, a.dev)
 }
 
@@ -63,10 +60,10 @@ func TestInsertVisit(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockDb := mocks.NewMockDbConnector(mockCtrl)
-	k := kcp.New(nil, mockDb)
+	mockDb := NewMockDbConnector(mockCtrl)
+	k := New(nil, mockDb)
 
-	event := kcp.Event{}
+	event := Event{}
 	mockDb.EXPECT().InsertEvent(event).Return(nil)
 
 	k.InsertVisit(event)

@@ -10,7 +10,7 @@
 //   * Filters visits by time greater than (gt), less than (lt), day of the week (day)
 package kcp
 
-//go:generate mockgen -destination=../mocks/mock_kcp.go -package=mocks github.com/SarunasBucius/kafka-cass-practise/kcp Producer,DbConnector
+//go:generate mockgen -destination=../kcp/kcp_mock.go -package=kcp github.com/SarunasBucius/kafka-cass-practise/kcp Producer,DbConnector
 
 import (
 	"errors"
