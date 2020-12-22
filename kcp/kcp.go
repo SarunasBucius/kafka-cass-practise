@@ -137,21 +137,15 @@ func formatTime(filter map[string]string, key string) (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	// split string to get year, month, day
-	dateParts := strings.Split(unf, "-")
-	if len(dateParts) == 0 || len(dateParts) > 3 {
-		return time.Time{}, ErrInvalidFilter
-	}
-
 	// add month and day if missing
-	for i := len(dateParts); i < 3; i++ {
+	for i := len(strings.Split(unf, "-")); i < 3; i++ {
 		unf += "-01"
 	}
 
 	f, err := time.Parse("2006-01-02", unf)
 	if err != nil {
 		fmt.Println(err)
-		return time.Time{}, err
+		return time.Time{}, ErrInvalidFilter
 	}
 	return f, nil
 }
