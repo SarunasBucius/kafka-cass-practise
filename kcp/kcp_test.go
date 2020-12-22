@@ -263,3 +263,74 @@ func TestGetVisits(t *testing.T) {
 		}
 	}
 }
+
+func TestGetVisitsByIP(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockDb := NewMockDbConnector(mockCtrl)
+	k := New(nil, mockDb)
+
+	type test struct {
+		name   string
+		ip     string
+		filter map[string]string
+		want   VisitsByIP
+		err    error
+	}
+
+	gt, err := time.Parse("2006-01-02", "2020-01-01")
+	if err != nil {
+		t.Error(err)
+	}
+	lt, err := time.Parse("2006-01-02", "2021-01-01")
+	if err != nil {
+		t.Error(err)
+	}
+	tests := []test{
+		{
+			name:   "all filters valid",
+			filter: map[string]string{"gt": "2020", "lt": "2021", "day": "Monday"},
+			want:   VisitsByIP{},
+			err:    nil,
+		},
+		{
+			name:   "day invalid",
+			filter: map[string]string{"gt": "2020", "lt": "2021", "day": "Mday"},
+			want:   nil,
+			err:    ErrInvalidFilter,
+		},
+		{
+			name:   "gt invalid",
+			filter: map[string]string{"gt": "abc", "lt": "2021", "day": "Monday"},
+			want:   nil,
+			err:    ErrInvalidFilter,
+		},
+		{
+			name:   "lt invalid",
+			filter: map[string]string{"gt": "2020", "lt": "abc", "day": "Monday"},
+			want:   nil,
+			err:    ErrInvalidFilter,
+		},
+		{
+			name:   "no filters",
+			filter: map[string]string{},
+			want:   VisitsByIP{},
+			err:    nil,
+		},
+	}
+
+	mockDb.EXPECT().GetVisitsByIP("ip", "Monday", gt, lt).Return(VisitsByIP{}, nil).Times(1)
+	mockDb.EXPECT().GetVisitsByIP("ip", "", time.Time{}, time.Time{}).Return(VisitsByIP{}, nil).Times(1)
+
+	for _, tt := range tests {
+		got, err := k.GetVisitsByIP("ip", tt.filter)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%s: expected: %v, got: %v", tt.name, tt.want, got)
+		}
+		if err != tt.err {
+			t.Errorf("%s: expected: %v, got: %v", tt.name, tt.err, err)
+		}
+	}
+
+}
