@@ -334,3 +334,10 @@ func TestGetVisitsByIP(t *testing.T) {
 	}
 
 }
+
+func ExampleKcp_PrintDay() {
+	k := New(nil, nil)
+	k.PrintDay(Event{Day: "Monday"})
+	// Output:
+	// Monday
+}
