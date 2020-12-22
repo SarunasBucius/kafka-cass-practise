@@ -115,7 +115,7 @@ func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
 		}
 		visits[i] = filtered
 	}
-	return visits, err
+	return visits, nil
 }
 
 func isValidDay(filter map[string]string) (string, error) {
