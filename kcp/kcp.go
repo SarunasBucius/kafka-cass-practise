@@ -95,8 +95,9 @@ func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
 	}
 
 	// filter data
+	filteredVisits := make(VisitsByIP)
 	for i, visitsByIP := range visits {
-		var filtered []time.Time
+		var filteredTime []time.Time
 		for _, visit := range visitsByIP {
 			if !gt.IsZero() && visit.Before(gt) {
 				continue
@@ -107,15 +108,14 @@ func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
 			if day != "" && day != visit.Weekday().String() {
 				continue
 			}
-			filtered = append(filtered, visit)
+			filteredTime = append(filteredTime, visit)
 		}
-		if filtered == nil {
-			delete(visits, i)
+		if filteredTime == nil {
 			continue
 		}
-		visits[i] = filtered
+		filteredVisits[i] = filteredTime
 	}
-	return visits, nil
+	return filteredVisits, nil
 }
 
 func isValidDay(filter map[string]string) (string, error) {
