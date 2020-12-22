@@ -1,7 +1,9 @@
 package kcp
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -156,6 +158,108 @@ func TestIsValidDay(t *testing.T) {
 		}
 		if err != tt.err {
 			t.Errorf("%s: expected: %v, got: %v", name, tt.err, err)
+		}
+	}
+}
+
+var errMock = errors.New("error mock")
+
+func TestGetVisits(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockDb := NewMockDbConnector(mockCtrl)
+	k := New(nil, mockDb)
+
+	// Create dummy data to be returned from mocked db.
+	visits := make(VisitsByIP)
+	for i := 1; i <= 7; i++ {
+		visits["ip"] = append(visits["ip"], time.Date(2020, 1, i, 0, 0, 0, 0, time.UTC))
+	}
+
+	gomock.InOrder(
+		mockDb.EXPECT().GetVisits().Return(visits, nil).Times(6),
+		mockDb.EXPECT().GetVisits().Return(nil, errMock).Times(1),
+	)
+
+	type test struct {
+		name   string
+		filter map[string]string
+		want   VisitsByIP
+		err    error
+	}
+
+	weekday := visits["ip"][0].Weekday().String()
+	tests := []test{
+		{
+			name:   "no filters",
+			filter: map[string]string{},
+			want:   visits,
+			err:    nil,
+		},
+		{
+			name:   "filter by gt",
+			filter: map[string]string{"gt": "2020-01-05"},
+			want:   VisitsByIP{"ip": visits["ip"][4:]},
+			err:    nil,
+		},
+		{
+			name:   "filter by lt",
+			filter: map[string]string{"lt": "2020-01-05"},
+			want:   VisitsByIP{"ip": visits["ip"][:5]},
+			err:    nil,
+		},
+		{
+			name:   "filter by day",
+			filter: map[string]string{"day": weekday},
+			want:   VisitsByIP{"ip": []time.Time{visits["ip"][0]}},
+			err:    nil,
+		},
+		{
+			name:   "filter by all",
+			filter: map[string]string{"gt": "2020", "lt": "2020-01-05", "day": weekday},
+			want:   VisitsByIP{"ip": []time.Time{visits["ip"][0]}},
+			err:    nil,
+		},
+		{
+			name:   "all filtered out",
+			filter: map[string]string{"gt": "2021"},
+			want:   VisitsByIP{},
+			err:    nil,
+		},
+		{
+			name:   "wrong gt",
+			filter: map[string]string{"gt": "abc"},
+			want:   nil,
+			err:    ErrInvalidFilter,
+		},
+		{
+			name:   "wrong lt",
+			filter: map[string]string{"lt": "abc"},
+			want:   nil,
+			err:    ErrInvalidFilter,
+		},
+		{
+			name:   "wrong day",
+			filter: map[string]string{"day": "mday"},
+			want:   nil,
+			err:    ErrInvalidFilter,
+		},
+		{
+			name:   "error from db",
+			filter: map[string]string{},
+			want:   nil,
+			err:    errMock,
+		},
+	}
+
+	for _, tt := range tests {
+		got, err := k.GetVisits(tt.filter)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%s: expected: %v, got: %v", tt.name, tt.want, got)
+		}
+		if err != tt.err {
+			t.Errorf("%s: expected: %v, got: %v", tt.name, tt.err, err)
 		}
 	}
 }
