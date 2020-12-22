@@ -121,6 +121,41 @@ func TestFormatTime(t *testing.T) {
 		if err != tt.err {
 			t.Errorf("%s: expected: %v, got: %v", name, tt.err, err)
 		}
-		fmt.Printf("finished testing %v \n", name)
+	}
+}
+
+func TestIsValidDay(t *testing.T) {
+	type test struct {
+		filter map[string]string
+		want   string
+		err    error
+	}
+
+	tests := map[string]test{
+		"no value": {
+			filter: map[string]string{},
+			want:   "",
+			err:    nil,
+		},
+		"valid day": {
+			filter: map[string]string{"day": "Monday"},
+			want:   "Monday",
+			err:    nil,
+		},
+		"invalid day": {
+			filter: map[string]string{"day": "Mday"},
+			want:   "",
+			err:    ErrInvalidFilter,
+		},
+	}
+
+	for name, tt := range tests {
+		got, err := isValidDay(tt.filter)
+		if got != tt.want {
+			t.Errorf("%s: expected: %v, got: %v", name, tt.want, got)
+		}
+		if err != tt.err {
+			t.Errorf("%s: expected: %v, got: %v", name, tt.err, err)
+		}
 	}
 }
