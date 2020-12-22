@@ -68,3 +68,59 @@ func TestInsertVisit(t *testing.T) {
 
 	k.InsertVisit(event)
 }
+
+func TestFormatTime(t *testing.T) {
+	type test struct {
+		filter map[string]string
+		key    string
+		want   time.Time
+		err    error
+	}
+
+	y, err := time.Parse("2006-01-02", "2020-01-01")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ymd, err := time.Parse("2006-01-02", "2020-05-05")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := map[string]test{
+		"no value": {
+			filter: map[string]string{},
+			key:    "date",
+			want:   time.Time{},
+			err:    nil,
+		},
+		"year": {
+			filter: map[string]string{"date": "2020"},
+			key:    "date",
+			want:   y,
+			err:    nil,
+		},
+		"year month day": {
+			filter: map[string]string{"date": "2020-05-05"},
+			key:    "date",
+			want:   ymd,
+			err:    nil,
+		},
+		"invalid year": {
+			filter: map[string]string{"date": "abc"},
+			key:    "date",
+			want:   time.Time{},
+			err:    ErrInvalidFilter,
+		},
+	}
+
+	for name, tt := range tests {
+		got, err := formatTime(tt.filter, tt.key)
+		if got != tt.want {
+			t.Errorf("%s: expected: %v, got: %v", name, tt.want, got)
+		}
+		if err != tt.err {
+			t.Errorf("%s: expected: %v, got: %v", name, tt.err, err)
+		}
+		fmt.Printf("finished testing %v \n", name)
+	}
+}
