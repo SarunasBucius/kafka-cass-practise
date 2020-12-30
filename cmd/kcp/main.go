@@ -39,7 +39,7 @@ func runApp() error {
 		return err
 	}
 	defer prod.Close()
-	db, err := database.CassConn()
+	db, err := database.SQLiteConn()
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func runApp() error {
 
 	k := kcp.New(
 		&async.Produce{Producer: prod},
-		&database.Db{Session: db},
+		&database.SQLite{DB: db},
 	)
 
 	wg := &sync.WaitGroup{}
