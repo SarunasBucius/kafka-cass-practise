@@ -39,15 +39,18 @@ func runApp() error {
 		return err
 	}
 	defer prod.Close()
-	db, err := database.SQLiteConn()
+	db, err := database.SQLiteGormConn()
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		d, _ := db.DB()
+		d.Close()
+	}()
 
 	k := kcp.New(
 		&async.Produce{Producer: prod},
-		&database.SQLite{DB: db},
+		&database.Gorm{DB: db},
 	)
 
 	wg := &sync.WaitGroup{}
