@@ -28,7 +28,7 @@ services:
     restart: always
     
   kafka: 
-    image: landoop/fast-data-dev
+    image: landoop/fast-data-dev:2.5.1-L0
     ports:
       - "3030:3030"
     environment:
