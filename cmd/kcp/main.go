@@ -55,6 +55,7 @@ func runApp() error {
 
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
+	defer waitWithTimeout(wg, cancel, time.Second*15)
 	if err := startServices(ctx, cancel, k, wg); err != nil {
 		return err
 	}
@@ -67,8 +68,6 @@ func runApp() error {
 	case <-sig:
 	}
 
-	cancel()
-	waitWithTimeout(wg, time.Second*15)
 	return nil
 }
 
@@ -108,7 +107,8 @@ func startServices(ctx context.Context, cancel context.CancelFunc, k *kcp.Kcp, w
 	return nil
 }
 
-func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) {
+func waitWithTimeout(wg *sync.WaitGroup, cancel context.CancelFunc, timeout time.Duration) {
+	cancel()
 	c := make(chan struct{})
 	go func() {
 		defer close(c)
