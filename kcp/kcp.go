@@ -123,10 +123,18 @@ func isValidDay(filter map[string]string) (string, error) {
 	if day == "" {
 		return "", nil
 	}
-	for i := 0; i < 7; i++ {
-		if time.Weekday(i).String() == day {
-			return day, nil
-		}
+	var empty struct{}
+	days := map[string]struct{}{
+		"Monday":    empty,
+		"Tuesday":   empty,
+		"Wednesday": empty,
+		"Thursday":  empty,
+		"Friday":    empty,
+		"Saturday":  empty,
+		"Sunday":    empty,
+	}
+	if _, ok := days[day]; ok {
+		return day, nil
 	}
 	return "", ErrInvalidFilter
 }
