@@ -119,12 +119,13 @@ func (k *Kcp) GetVisits(filter map[string]string) (VisitsByIP, error) {
 }
 
 func isValidDay(filter map[string]string) (string, error) {
-	if filter["day"] == "" {
+	day := filter["day"]
+	if day == "" {
 		return "", nil
 	}
 	for i := 0; i < 7; i++ {
-		if time.Weekday(i).String() == filter["day"] {
-			return filter["day"], nil
+		if time.Weekday(i).String() == day {
+			return day, nil
 		}
 	}
 	return "", ErrInvalidFilter
