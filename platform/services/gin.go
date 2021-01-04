@@ -18,6 +18,7 @@ func GinRoutes(h Handler) *gin.Engine {
 	r := gin.Default()
 	r.GET("/api/visits", hgin.getVisitsHandler)
 	r.POST("/api/visits", hgin.postVisitHandler)
+	r.GET("/api/visits/:ip", hgin.getVisitsByIPHandler)
 	return r
 }
 
@@ -45,6 +46,25 @@ func (h ginHandler) getVisitsHandler(c *gin.Context) {
 func (h ginHandler) postVisitHandler(c *gin.Context) {
 	ip := strings.Split(c.Request.RemoteAddr, ":")[0]
 	if err := h.ProduceVisit(ip); err != nil {
+		http.Error(c.Writer, "unexpected error occured", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h ginHandler) getVisitsByIPHandler(c *gin.Context) {
+	ip := c.Param("ip")
+	filter := make(map[string]string)
+	for f, val := range c.Request.URL.Query() {
+		filter[f] = val[0]
+	}
+	visits, err := h.GetVisitsByIP(ip, filter)
+	if err != nil {
+		http.Error(c.Writer, "unexpected error occured", http.StatusInternalServerError)
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(c.Writer).Encode(visits); err != nil {
 		http.Error(c.Writer, "unexpected error occured", http.StatusInternalServerError)
 		return
 	}
