@@ -21,12 +21,12 @@ type Handler interface {
 }
 
 // ListenHTTP listens and serves http requests.
-func ListenHTTP(ctx context.Context, h Handler, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func ListenHTTP(ctx context.Context, h http.Handler, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	srv := &http.Server{
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler:      SetRoutes(h),
+		Handler:      h,
 	}
 	go func() {
 		defer wg.Done()

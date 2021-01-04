@@ -102,7 +102,7 @@ func startServices(ctx context.Context, cancel context.CancelFunc, k *kcp.Kcp, w
 	}
 
 	wg.Add(1)
-	go services.ListenHTTP(ctx, k, cancel, wg)
+	go services.ListenHTTP(ctx, services.GinRoutes(k), cancel, wg)
 
 	return nil
 }
