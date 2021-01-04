@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -29,24 +28,16 @@ func (h ginHandler) getVisitsHandler(c *gin.Context) {
 	}
 	visits, err := h.GetVisits(filter)
 	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": "unexpected error occured"},
-		)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-
-	c.Writer.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(c.Writer).Encode(visits); err != nil {
-		http.Error(c.Writer, "unexpected error occured", http.StatusInternalServerError)
-		return
-	}
+	c.JSON(200, visits)
 }
 
 func (h ginHandler) postVisitHandler(c *gin.Context) {
 	ip := strings.Split(c.Request.RemoteAddr, ":")[0]
 	if err := h.ProduceVisit(ip); err != nil {
-		http.Error(c.Writer, "unexpected error occured", http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 }
@@ -59,13 +50,8 @@ func (h ginHandler) getVisitsByIPHandler(c *gin.Context) {
 	}
 	visits, err := h.GetVisitsByIP(ip, filter)
 	if err != nil {
-		http.Error(c.Writer, "unexpected error occured", http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-
-	c.Writer.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(c.Writer).Encode(visits); err != nil {
-		http.Error(c.Writer, "unexpected error occured", http.StatusInternalServerError)
-		return
-	}
+	c.JSON(200, visits)
 }
