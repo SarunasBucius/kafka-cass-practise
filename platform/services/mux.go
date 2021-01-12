@@ -19,6 +19,7 @@ func SetRoutes(h Handler) *mux.Router {
 	r.HandleFunc("/api/visits", getVisitsHandler(h)).Methods("GET")
 	r.HandleFunc("/api/visits/{ip}", getVisitsByIPHandler(h)).Methods("GET")
 	r.HandleFunc("/api/upload-image", uploadImageHandler).Methods("POST")
+	r.HandleFunc("/api/load-image/{filename}", loadImageHandler).Methods("GET")
 	return r
 }
 
@@ -77,6 +78,12 @@ func uploadImageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func loadImageHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	// Might not be safe due to user input.
+	http.ServeFile(w, r, "./images/"+vars["filename"])
 }
 
 func postVisitHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
