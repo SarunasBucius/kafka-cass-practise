@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -81,9 +82,21 @@ func uploadImageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loadImageHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	// Might not be safe due to user input.
-	http.ServeFile(w, r, "./images/"+vars["filename"])
+	fn := mux.Vars(r)["filename"]
+
+	// Check if name is valid.
+	// Name without ext is 20 chars, containing all lowercase sequence of a to v letters and 0 to 9 numbers ([0-9a-v]{20}).
+	// https://github.com/rs/xid
+	// Valid extensions are jpeg and png.
+	if ok, err := regexp.Match(
+		"^[0-9a-v]{20}\\.(?:jpeg|png)$",
+		[]byte(fn),
+	); !ok || err != nil {
+		http.Error(w, "unexpected error occured", http.StatusInternalServerError)
+		return
+	}
+
+	http.ServeFile(w, r, "./images/"+fn)
 }
 
 func postVisitHandler(h Handler) func(w http.ResponseWriter, r *http.Request) {
