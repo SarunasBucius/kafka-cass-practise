@@ -1,9 +1,10 @@
 package services
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"regexp"
@@ -28,36 +29,22 @@ func SetRoutes(h Handler) *mux.Router {
 const maxFileSize = 1024 * 1024 * 5
 
 func uploadImageHandler(w http.ResponseWriter, r *http.Request) {
+	// Set limit for file size.
 	if r.ContentLength > maxFileSize {
 		http.Error(w, "file size too big", http.StatusBadRequest)
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxFileSize)
 
-	f, _, err := r.FormFile("image")
+	// Get image from request.
+	fr, _, err := r.FormFile("image")
 	if err != nil {
 		http.Error(w, "unexpected error occured", http.StatusInternalServerError)
 		return
 	}
-	defer f.Close()
+	defer fr.Close()
 
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		http.Error(w, "unexpected error occured", http.StatusInternalServerError)
-		return
-	}
-
-	var ext string
-	switch mime := http.DetectContentType(b); mime {
-	case "image/jpeg":
-		ext = "jpeg"
-	case "image/png":
-		ext = "png"
-	default:
-		http.Error(w, "wrong file type", http.StatusBadRequest)
-		return
-	}
-
+	// Create dir images in case one does not exists.
 	// Could move to SetRoutes() to create and not check every request.
 	// Leaving here to not spread the code.
 	if err := os.MkdirAll("images", os.ModeDir); err != nil {
@@ -65,13 +52,48 @@ func uploadImageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fname := fmt.Sprintf("%v.%v", xid.New().String(), ext)
+	// Peek first 512 bytes to detect content type.
+	sniff, err := bufio.NewReader(fr).Peek(512)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "unexpected error occured", http.StatusInternalServerError)
+		return
+	}
+	var ext string
+	switch mime := http.DetectContentType(sniff); mime {
+	case "image/jpeg":
+		ext = ".jpeg"
+	case "image/png":
+		ext = ".png"
+	default:
+		http.Error(w, "wrong file type", http.StatusBadRequest)
+		return
+	}
 
-	if err := ioutil.WriteFile("images/"+fname, b, 0666); err != nil {
+	// Create file name by generating unique name and adding extension
+	// determined by http.DetectContentType.
+	fname := xid.New().String() + ext
+
+	// Required to read after peeking.
+	// TODO: find out why this is needed.
+	fr.Seek(0, 0)
+
+	// Create new file using name generated above.
+	fs, err := os.Create("images/" + fname)
+	if err != nil {
+		http.Error(w, "unexpected error occured", http.StatusInternalServerError)
+		return
+	}
+	defer fs.Close()
+
+	// Copy content from request file to system file.
+	if _, err := io.Copy(fs, fr); err != nil {
+		fmt.Println(err)
 		http.Error(w, "unexpected error occured", http.StatusInternalServerError)
 		return
 	}
 
+	// Respond with JSON containing filename.
 	resp := map[string]string{"filename": fname}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
