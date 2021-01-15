@@ -45,7 +45,7 @@ type Producer interface {
 // ProduceVisit takes ip as param, produces visit Event and returns error.
 func (k *Kcp) ProduceVisit(ip string) error {
 	now := time.Now().UTC()
-	day := time.Time(now).Weekday().String()
+	day := now.Weekday().String()
 	event := Event{VisitedAt: now, IP: ip, Day: day}
 	return k.ProduceEvent(event)
 }
